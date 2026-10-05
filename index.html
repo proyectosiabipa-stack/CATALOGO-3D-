@@ -1,0 +1,2067 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="marca/hoja.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="marca/icono-192.png">
+<meta name="description" content="Catálogo 3D de productos BIPA para el equipo de ventas.">
+<title>Catálogo BIPA 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: escenario 3D tipo estudio fotográfico (arriba en móvil, columna fija a la izquierda en escritorio)
+   y una columna de ficha + catálogo que se desplaza. Identidad BIPA: fondo blanco, logo, y los dos verdes
+   de la marca (#286a4d / #95cf5f) en botones, acentos y detalles. */
+:root {
+  --bg: #ffffff;
+  --bg-2: #f6f8f3;        /* blanco verdoso para bandas y fondos suaves */
+  --surface: #ffffff;
+  --surface-2: #f1f5ec;
+  --line: rgba(40, 70, 52, .12);
+  --line-2: rgba(40, 70, 52, .22);
+  --ink: #2a2422;         /* texto principal, café casi negro */
+  --muted: #6d625e;
+  --faint: #9a908b;
+  --green: #286a4d;       /* verde oscuro de la franja */
+  --green-2: #1d5139;
+  --lime: #95cf5f;        /* verde claro de la franja */
+  --lime-soft: #edf6e3;
+  --leaf: #7a9a45;        /* verde de la hoja del logo */
+  --brown: #7e5b55;       /* café del logotipo */
+  --ember: #e8892f;
+  --wa: #25d366;
+  --shadow: 0 1px 2px rgba(30, 50, 35, .06), 0 8px 24px -10px rgba(30, 50, 35, .18);
+  --shadow-lg: 0 2px 6px rgba(30, 50, 35, .08), 0 24px 60px -18px rgba(30, 50, 35, .32);
+  --display: "Gloock", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --sans: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --ease: cubic-bezier(.16, .84, .3, 1);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+[hidden] { display: none !important; }
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; border-radius: 6px; }
+img { max-width: 100%; display: block; }
+::selection { background: var(--lime); color: var(--green-2); }
+
+/* acento de color en títulos: los dos verdes de la marca */
+.slash { display: inline-flex; gap: 3px; flex-shrink: 0; align-items: center; }
+.slash i { display: block; width: 14px; height: 4px; background: var(--green); border-radius: 2px; }
+.slash i + i { width: 6px; background: var(--lime); }
+.slash i + i + i { display: none; }
+
+.app { display: grid; grid-template-columns: minmax(0, 1fr); }
+
+/* ---------- Escenario ---------- */
+.stage { position: relative; height: 66svh; min-height: 440px; max-height: 780px; overflow: hidden; isolation: isolate;
+  background: radial-gradient(85% 70% at 46% 46%, #ffffff 0%, #f8faf5 58%, #edf2e8 100%); }
+#gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+#gl:active { cursor: grabbing; }
+.vignette { position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, .92), rgba(255, 255, 255, 0) 17%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, .9) 100%); }
+.labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
+.lbl { position: absolute; left: 0; top: 0; font-family: var(--mono); font-size: 11px; color: var(--green-2); white-space: nowrap; font-weight: 500;
+  transform: translate(-50%, -50%); padding: 2px 7px; border-radius: 5px; background: rgba(255, 255, 255, .88);
+  border: 1px solid rgba(40, 106, 77, .25); letter-spacing: .02em; will-change: transform; box-shadow: 0 2px 8px -4px rgba(30, 50, 35, .3); }
+.lbl.tick { background: none; border: 0; color: var(--faint); font-size: 10px; padding: 0; box-shadow: none; }
+.lbl.name { pointer-events: auto; cursor: pointer; font-family: var(--sans); font-size: 11.5px; font-weight: 600; max-width: 96px; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; line-height: 1.2; padding: 4px 7px; transform: translate(-50%, 0); }
+.lbl.name.alt { margin-top: 30px; }
+@media (max-width: 699px) { .lbl.name { transform-origin: 100% 0; font-size: 10.5px; padding: 3px 6px; } .lbl.name.alt { margin-top: 0; } }
+.lbl.name:hover { border-color: var(--green); background: var(--green); color: #fff; }
+
+.topbar { position: absolute; z-index: 3; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 0; }
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; min-width: 0; }
+.brand img { height: 30px; width: auto; }
+.brand small { display: block; font-family: var(--mono); font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+  padding-left: 12px; border-left: 1px solid var(--line-2); line-height: 1.3; white-space: nowrap; }
+.top-actions { display: flex; gap: 8px; }
+.icon-btn { width: 40px; height: 40px; border-radius: 999px; display: grid; place-items: center; background: rgba(255, 255, 255, .86); color: var(--ink);
+  border: 1px solid var(--line); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); position: relative; box-shadow: var(--shadow);
+  transition: border-color .2s, background .2s, color .2s, transform .15s; }
+.icon-btn:hover { border-color: var(--green); color: var(--green); }
+.icon-btn:active { transform: scale(.95); }
+.icon-btn svg { width: 18px; height: 18px; }
+.icon-btn[aria-pressed="true"] { background: var(--green); color: #fff; border-color: var(--green); }
+
+.stage-info { position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; padding: 0 16px 16px; display: flex; align-items: flex-end;
+  justify-content: space-between; gap: 12px; pointer-events: none; }
+.stage-info > * { pointer-events: auto; }
+.titleblock { min-width: 0; }
+.eyebrow { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--green);
+  display: flex; gap: 10px; align-items: center; font-weight: 500; }
+.eyebrow #counter { color: var(--faint); }
+.titleblock h1 { margin: 6px 0 0; font-family: var(--display); font-weight: 400; font-size: clamp(30px, 8.2vw, 60px); line-height: 1;
+  letter-spacing: -.01em; text-wrap: balance; color: var(--ink); }
+.nav { display: flex; gap: 8px; flex-shrink: 0; }
+.nav .icon-btn { width: 46px; height: 46px; }
+.nav .icon-btn#next { background: var(--green); color: #fff; border-color: var(--green); }
+.nav .icon-btn#next:hover { background: var(--green-2); }
+.tools { position: absolute; z-index: 3; right: 16px; top: calc(env(safe-area-inset-top, 0px) + 66px); display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.tool { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px 0 10px; border-radius: 999px; font-size: 12.5px; color: var(--ink);
+  font-weight: 600; background: rgba(255, 255, 255, .86); border: 1px solid var(--line); backdrop-filter: blur(8px); box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(8px); transition: background .2s, color .2s, border-color .2s; justify-content: flex-start; }
+.tool:hover { border-color: var(--green); }
+.tool svg { width: 16px; height: 16px; flex-shrink: 0; }
+.tool[aria-pressed="true"] { background: var(--green); color: #fff; border-color: var(--green); }
+.tool .t { display: none; }
+.hint { position: absolute; z-index: 2; left: 50%; top: 46%; transform: translate(-50%, -50%); font-family: var(--mono); font-size: 11px;
+  color: var(--green-2); background: rgba(255, 255, 255, .9); border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px;
+  pointer-events: none; white-space: nowrap; opacity: 0; box-shadow: var(--shadow); }
+
+/* ---------- Presentación (pantalla completa con avance automático) ---------- */
+.present-bar { position: absolute; z-index: 4; left: 0; right: 0; top: 0; height: 3px; background: rgba(40, 106, 77, .12); display: none; }
+.present-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--green), var(--lime)); }
+.presenting .present-bar { display: block; }
+.presenting .tools .tool:not(#tPresent), .presenting #searchJump { display: none; }
+.stage:fullscreen { height: 100vh; max-height: none; }
+.stage:-webkit-full-screen { height: 100vh; max-height: none; }
+
+/* ---------- Cargador ---------- */
+.loader { position: fixed; inset: 0; z-index: 50; background: #fff; display: grid; place-items: center; overflow: hidden; }
+.loader-inner { display: grid; justify-items: center; gap: 22px; position: relative; z-index: 1; }
+.loader .logo { width: min(240px, 60vw); height: auto; }
+.loader .bar { width: 160px; height: 3px; background: var(--lime-soft); border-radius: 3px; overflow: hidden; }
+.loader .bar i { display: block; height: 100%; width: 40%; background: var(--green); border-radius: 3px; animation: load 1.2s var(--ease) infinite; }
+.loader p { margin: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+@keyframes load { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+
+/* ---------- Columna ---------- */
+.panel { border-top: 1px solid var(--line); padding-inline: 16px; padding-block: 18px 120px; display: flex; flex-direction: column; gap: 40px; min-width: 0; background: var(--bg); }
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.section-head h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 27px; line-height: 1.1; display: flex; align-items: center; gap: 12px; }
+.section-head > span { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: .06em; }
+
+.detail { display: flex; flex-direction: column; gap: 22px; }
+.chips-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.seal { font-size: 12px; font-weight: 600; padding: 5px 11px 5px 8px; border-radius: 999px; border: 1px solid rgba(40, 106, 77, .2);
+  color: var(--green); display: inline-flex; align-items: center; gap: 6px; background: var(--lime-soft); }
+.seal svg { width: 13px; height: 13px; }
+.seal.note { color: #9a5a17; border-color: rgba(232, 137, 47, .3); background: #fdf3e7; }
+.desc { margin: 0; color: var(--muted); font-size: 16px; max-width: 58ch; }
+.specs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 16px; background: var(--bg-2); border: 1px solid var(--line); padding: 0 14px; margin: 0; }
+.specs[data-n="1"] { grid-template-columns: minmax(0, 1fr); }
+.specs[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.specs[data-n="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 520px) {
+  .specs[data-n="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .specs[data-n="4"] .spec:nth-child(3) { padding-left: 0; border-left: 0; }
+  .specs[data-n="4"] .spec:nth-child(n+3) { border-top: 1px solid var(--line); }
+}
+.spec { padding: 13px 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.spec + .spec { padding-left: 12px; border-left: 1px solid var(--line); }
+.spec dt { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--green); }
+.spec dd { margin: 0; font-family: var(--display); font-size: clamp(19px, 5.4vw, 24px); line-height: 1.15; font-variant-numeric: tabular-nums; }
+.spec dd small { font-family: var(--sans); font-size: 13px; color: var(--muted); }
+.group-label { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--green); margin: 0 0 10px; font-weight: 500; }
+.group-label b { color: var(--ink); font-weight: 600; letter-spacing: .02em; text-transform: none; font-family: var(--sans); font-size: 13px; margin-left: 6px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+.swatch { width: 36px; height: 36px; border-radius: 50%; border: 2px solid transparent; padding: 3px; background: none; transition: transform .15s; }
+.swatch:hover { transform: scale(1.08); }
+.swatch i { display: block; width: 100%; height: 100%; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12), inset 0 -4px 8px rgba(0, 0, 0, .18), inset 0 2px 4px rgba(255, 255, 255, .45); }
+.swatch[aria-pressed="true"] { border-color: var(--green); }
+.aroma { font-size: 13px; font-weight: 500; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: #fff;
+  display: inline-flex; align-items: center; gap: 8px; transition: background .2s, border-color .2s, color .2s; }
+.aroma:hover { border-color: var(--green); }
+.aroma i { width: 9px; height: 9px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15); }
+.aroma[aria-pressed="true"] { background: var(--green); border-color: var(--green); color: #fff; }
+
+.packs { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.pack { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.pack-main { min-width: 0; }
+.pack-main strong { display: block; font-size: 15.5px; font-weight: 600; }
+.pack-main span { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+.pack-side { display: flex; align-items: center; gap: 12px; }
+.price { font-family: var(--mono); font-size: 12.5px; color: var(--faint); text-align: right; white-space: nowrap; }
+.price.has { color: var(--green-2); font-size: 15px; font-weight: 500; }
+
+.actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.actions .btn.wa, .actions .btn.primary { grid-column: 1 / -1; }
+.btn { height: 50px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-weight: 700; color: var(--ink);
+  font-size: 14.5px; text-decoration: none; border: 1px solid var(--line-2); background: #fff; transition: transform .15s, background .2s, border-color .2s, color .2s; padding: 0 14px; }
+.btn:hover { border-color: var(--green); color: var(--green); }
+.btn:active { transform: scale(.98); }
+.btn svg { width: 19px; height: 19px; flex-shrink: 0; }
+.btn.wa { background: var(--wa); color: #05301a; border-color: var(--wa); }
+.btn.wa:hover { background: #1fc25c; color: #05301a; }
+.btn.primary { background: var(--green); color: #fff; border-color: var(--green); }
+.btn.primary:hover { background: var(--green-2); color: #fff; }
+.zoom { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 24px; background: rgba(250, 252, 248, .94); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); cursor: zoom-out; }
+.zoom[hidden] { display: none; }
+.zoom img { max-width: min(100%, 720px); max-height: calc(100dvh - 48px); border-radius: 16px; background: #fff; box-shadow: var(--shadow-lg); }
+.zoom-actions { display: none; position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); transform: translateX(-50%); gap: 10px; }
+.zoom-actions .btn { min-width: 140px; box-shadow: var(--shadow-lg); }
+.zoom.ficha .zoom-actions { display: flex; }
+.zoom.ficha img { max-height: calc(100dvh - 130px); cursor: default; }
+.zoom .zoom-close { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 14px); right: 14px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--green); color: #fff; font-size: 26px; line-height: 1; cursor: pointer; }
+
+/* ---------- Catálogo ---------- */
+.search { position: relative; margin-bottom: 12px; }
+.search svg { position: absolute; left: 14px; top: 50%; width: 17px; height: 17px; transform: translateY(-50%); color: var(--green); }
+.search input { width: 100%; height: 48px; border-radius: 14px; border: 1px solid var(--line-2); background: var(--bg-2); color: var(--ink);
+  font: inherit; font-size: 15px; padding: 0 14px 0 42px; transition: border-color .2s, background .2s, box-shadow .2s; }
+.search input:focus { outline: none; border-color: var(--green); background: #fff; box-shadow: 0 0 0 4px rgba(149, 207, 95, .3); }
+.search input::placeholder { color: var(--faint); }
+.cats { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px 16px; padding: 2px 16px; }
+.cats::-webkit-scrollbar { display: none; }
+.cat { flex-shrink: 0; height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-2); background: #fff; font-size: 13px; font-weight: 600; white-space: nowrap; transition: background .2s, color .2s, border-color .2s; }
+.cat:hover { border-color: var(--green); }
+.cat span { font-family: var(--mono); font-weight: 400; font-size: 11px; color: var(--muted); margin-left: 4px; }
+.cat[aria-pressed="true"] { background: var(--green); color: #fff; border-color: var(--green); }
+.cat[aria-pressed="true"] span { color: var(--lime); }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.card { text-align: left; border: 1px solid var(--line); background: #fff; border-radius: 18px; padding: 0; overflow: hidden; position: relative;
+  display: flex; flex-direction: column; transition: border-color .25s, transform .25s var(--ease), box-shadow .25s; min-width: 0; box-shadow: var(--shadow); }
+.card:hover { border-color: rgba(40, 106, 77, .35); transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.card[aria-current="true"] { border-color: var(--green); box-shadow: 0 0 0 1px var(--green), var(--shadow-lg); }
+.card[aria-current="true"]::after { content: ""; position: absolute; top: 12px; right: 12px; width: 12px; height: 12px; z-index: 2; border-radius: 50%;
+  background: var(--lime); box-shadow: 0 0 0 3px #fff, 0 0 0 4.5px var(--green); }
+.thumb { aspect-ratio: 1; position: relative; background: radial-gradient(75% 65% at 50% 42%, #ffffff, #f2f6ee 70%, #e9efe3); }
+.thumb img { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .5s, transform .5s var(--ease); }
+.card:hover .thumb img { transform: scale(1.04); }
+.thumb img:not([src]) { visibility: hidden; }
+.thumb img.on { opacity: 1; }
+.thumb .ph { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-size: 34px; color: #dde6d5; }
+.thumb .cm { position: absolute; left: 10px; top: 10px; z-index: 2; font-family: var(--mono); font-size: 10.5px; color: var(--green-2); background: rgba(255, 255, 255, .85);
+  padding: 2px 7px; border-radius: 5px; border: 1px solid var(--line); }
+.card-body { padding: 10px 12px 13px; display: flex; flex-direction: column; gap: 3px; min-width: 0; border-top: 1px solid var(--line); }
+.card-body strong { font-size: 14px; font-weight: 600; line-height: 1.25; }
+.card-body span { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.card-body .dots { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.card-body .dots i { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.18); }
+.empty { grid-column: 1 / -1; padding: 30px 0; text-align: center; color: var(--muted); }
+
+/* herramientas de venta */
+.kit { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.kit button { border: 1px solid var(--line); background: var(--bg-2); border-radius: 16px; padding: 14px 12px; text-align: left; display: flex; flex-direction: column; gap: 8px;
+  transition: border-color .2s, background .2s, transform .15s; min-width: 0; }
+.kit button:hover { border-color: var(--green); background: #fff; }
+.kit button:active { transform: scale(.98); }
+.kit svg { width: 22px; height: 22px; color: var(--green); }
+.kit button > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.kit strong { font-size: 13.5px; font-weight: 700; line-height: 1.2; }
+.kit span { font-size: 12px; color: var(--muted); line-height: 1.3; }
+@media (max-width: 420px) { .kit { grid-template-columns: minmax(0, 1fr); } .kit button { flex-direction: row; align-items: center; } } 
+
+.foot { position: relative; overflow: hidden; border-radius: 22px; background: var(--bg-2); border: 1px solid var(--line); border-top: 4px solid var(--green); padding: 26px 22px;
+  display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 12.5px; }
+.foot .logo { width: 150px; height: auto; margin-bottom: 8px; }
+.foot a { color: var(--green); font-weight: 600; text-decoration: none; }
+
+
+.toast { position: fixed; z-index: 60; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 16px); transform: translate(-50%, -20px); opacity: 0;
+  background: var(--green); color: #fff; font-weight: 600; font-size: 13.5px; padding: 10px 16px; border-radius: 999px; pointer-events: none; box-shadow: var(--shadow-lg);
+  transition: opacity .25s, transform .35s var(--ease); max-width: calc(100% - 32px); text-align: center; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- Escritorio ---------- */
+@media (min-width: 980px) {
+  .app { grid-template-columns: minmax(0, 1.45fr) minmax(400px, 1fr); }
+  .stage { position: sticky; top: 0; align-self: start; height: 100svh; max-height: none; }
+  .topbar { padding: 24px 28px 0 30px; }
+  .brand img { height: 36px; }
+  .stage-info { bottom: 0; padding: 0 28px 30px 30px; }
+  .tools { right: 28px; top: 88px; }
+  .tool .t { display: inline; }
+  .panel { padding-inline: 32px 36px; padding-block: 36px 120px; border-left: 1px solid var(--line); border-top: 0; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cats { margin-inline: 0; padding-inline: 0; flex-wrap: wrap; overflow: visible; }
+}
+@media (min-width: 1400px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 380px) { .titleblock h1 { font-size: 28px; } .nav .icon-btn { width: 42px; height: 42px; } .brand small { display: none; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+
+/* ---------- Catálogo imprimible (PDF) ---------- */
+#print { display: none; }
+@media print {
+  @page { size: A4; margin: 0; }
+  body { background: #fff; }
+  body > *:not(#print) { display: none !important; }
+  #print { display: block; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .pg { width: 210mm; height: 297mm; position: relative; overflow: hidden; page-break-after: always; break-after: page; padding: 16mm 14mm 14mm 16mm; }
+  .pg { border-top: 3mm solid var(--green); }
+  .pg-cover { display: flex; flex-direction: column; justify-content: center; gap: 10mm; border-top: 0; border-left: 8mm solid var(--green); box-shadow: inset 3mm 0 0 var(--lime); padding-left: 24mm; }
+  .pg-cover img.logo { width: 110mm; }
+  .pg-cover h1 { font-family: var(--display); font-weight: 400; font-size: 34pt; margin: 0; line-height: 1.05; }
+  .pg-cover p { margin: 0; color: var(--muted); font-size: 11pt; max-width: 110mm; }
+  .pg-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6mm; }
+  .pg-head img { height: 9mm; }
+  .pg-head span { font-family: var(--mono); font-size: 8pt; letter-spacing: .14em; text-transform: uppercase; color: var(--green); }
+  .pg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+  .pi { border: 0.3mm solid var(--line-2); border-radius: 4mm; overflow: hidden; display: grid; grid-template-columns: 34mm 1fr; height: 76mm; break-inside: avoid; }
+  .pi .im { background: radial-gradient(75% 65% at 50% 42%, #ffffff, #eef3e9); display: grid; place-items: center; overflow: hidden; }
+  .pi .im img { width: 34mm; height: 34mm; object-fit: contain; }
+  .pi .tx { padding: 4mm 4mm 4mm 3mm; display: flex; flex-direction: column; gap: 1.6mm; font-size: 8pt; min-width: 0; }
+  .pi .tx small { font-family: var(--mono); font-size: 6.5pt; letter-spacing: .12em; text-transform: uppercase; color: var(--green); }
+  .pi .tx b { font-family: var(--display); font-weight: 400; font-size: 13pt; line-height: 1.1; }
+  .pi .tx p { margin: 0; color: var(--muted); line-height: 1.35; }
+  .pi .tx ul { margin: 0; padding-left: 3.5mm; color: var(--ink); line-height: 1.4; }
+  .pg-foot { position: absolute; left: 16mm; bottom: 8mm; font-family: var(--mono); font-size: 7pt; color: var(--faint); }
+}
+</style>
+</head>
+<body>
+
+<div class="loader" id="loader" role="status" aria-live="polite">
+  <div class="loader-inner">
+    <img class="logo" src="marca/logo.svg" alt="BIPA · Buenas ideas puestas en acción" width="240" height="146">
+    <div class="bar"><i></i></div>
+    <p>Preparando el catálogo</p>
+  </div>
+</div>
+
+<div class="app">
+  <section class="stage" id="stage" aria-label="Visor 3D del producto">
+    <canvas id="gl" aria-label="Modelo 3D del producto. Arrastra para girar."></canvas>
+    <div class="vignette"></div>
+    <div class="labels" id="labels"></div>
+    <div class="present-bar" aria-hidden="true"><i id="presentProgress"></i></div>
+
+    <header class="topbar">
+      <a class="brand" href="#" id="brandLink" aria-label="BIPA, ir al inicio del catálogo">
+        <img src="marca/logo-h.svg" alt="BIPA" width="128" height="36">
+        <small id="brandTag">Catálogo<br>de productos</small>
+      </a>
+      <div class="top-actions">
+        <button class="icon-btn" id="searchJump" aria-label="Buscar producto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="tools" role="toolbar" aria-label="Opciones del visor">
+      <button class="tool" id="tScale" aria-pressed="false" title="Comparar todas las velas a escala real">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V4M4 8h3M4 12h5M4 16h3M10 20V11M15 20V7M20 20v-6"/></svg><span class="t">A escala</span>
+      </button>
+      <button class="tool" id="tFlame" aria-pressed="true" title="Encender o apagar la llama">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 0 2 1 3 2 3 0-3-.5-6 .5-9z"/></svg><span class="t">Llama</span>
+      </button>
+      <button class="tool" id="tSpin" aria-pressed="true" title="Giro automático">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v4h-4"/></svg><span class="t">Girar</span>
+      </button>
+      <button class="tool" id="tPresent" aria-pressed="false" title="Presentar a un cliente: pantalla completa y avance automático">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8 20h8"/><path d="m10 8 4 2-4 2z" fill="currentColor"/></svg><span class="t">Presentar</span>
+      </button>
+    </div>
+
+    <div class="hint" id="hint">Arrastra para girar · pellizca para acercar</div>
+
+    <div class="stage-info">
+      <div class="titleblock">
+        <div class="eyebrow"><span class="slash" aria-hidden="true"><i></i><i></i><i></i></span><span id="eyebrow">Velas religiosas</span><span id="counter">01 / 17</span></div>
+        <h1 id="pName">Catálogo BIPA</h1>
+      </div>
+      <div class="nav">
+        <button class="icon-btn" id="prev" aria-label="Producto anterior">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <button class="icon-btn" id="next" aria-label="Producto siguiente">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <main class="panel">
+    <section class="detail" id="detail" aria-live="polite"></section>
+
+    <section aria-labelledby="kitTitle">
+      <div class="section-head"><h2 id="kitTitle"><span class="slash" aria-hidden="true"><i></i><i></i><i></i></span>Herramientas de venta</h2></div>
+      <div class="kit">
+        <button id="kitImage">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L6 21"/></svg>
+          <div><strong>Ficha en imagen</strong><span>Foto 3D con logo y medidas, lista para WhatsApp</span></div>
+        </button>
+        <button id="kitPresent">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8 20h8"/><path d="m10 8 4 2-4 2z" fill="currentColor"/></svg>
+          <div><strong>Modo presentación</strong><span>Pantalla completa y los productos pasan solos</span></div>
+        </button>
+        <button id="kitPdf">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 12v6M9 15l3 3 3-3"/></svg>
+          <div><strong>Catálogo en PDF</strong><span>Todos los productos con su imagen 3D</span></div>
+        </button>
+      </div>
+    </section>
+
+    <section id="catalogo" aria-labelledby="catTitle">
+      <div class="section-head"><h2 id="catTitle"><span class="slash" aria-hidden="true"><i></i><i></i><i></i></span>Catálogo completo</h2><span id="catCount"></span></div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Buscar vela, velón, aroma…" autocomplete="off" aria-label="Buscar en el catálogo">
+      </div>
+      <div class="cats" id="cats" role="group" aria-label="Categorías"></div>
+      <div class="grid" id="grid"></div>
+    </section>
+
+    <footer class="foot">
+      <img class="logo" src="marca/logo.svg" alt="BIPA · Buenas ideas puestas en acción" width="150" height="91">
+      <span id="footContact"></span>
+      <span>Medidas y presentaciones tomadas del catálogo oficial. Precios sujetos a confirmación.</span>
+    </footer>
+  </main>
+</div>
+
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="zoom" id="zoom" role="dialog" aria-modal="true" aria-label="Foto del producto" hidden><img alt=""><button class="zoom-close" aria-label="Cerrar">&times;</button>
+  <div class="zoom-actions"><button class="btn primary" id="fichaShare">Compartir</button><button class="btn" id="fichaSave">Descargar</button></div></div>
+
+<div id="print" aria-hidden="true"></div>
+
+<script src="productos.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+<!-- ================= Interfaz (funciona aunque el 3D no cargue) ================= -->
+<script>
+(function () {
+  "use strict";
+  var D = window.CATALOGO || { empresa: {}, categorias: [], productos: [] };
+  var E = D.empresa || {};
+  var P = D.productos || [];
+  var gs = window.gsap;
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var $ = function (s) { return document.querySelector(s); };
+
+  var COLORS = {
+    "Blanco": "#f4eee2", "Blancas": "#f4eee2", "Marfil": "#efe1bf", "Azul": "#3150b8", "Amarillo": "#f1c232",
+    "Verde": "#5e9e43", "Morado": "#7647ad", "Rojo": "#c3302c", "Rosado": "#f0a6bb", "Colores mixtos": "mix"
+  };
+  var AROMAS = {
+    "Cherry": "#b5203a", "Canela": "#8a4a22", "Citronela": "#c9d34a", "Coco": "#efe7d6", "Manzana y canela": "#b8442a",
+    "Coco y limón": "#d9e48a", "Arándanos": "#4b2f7a", "Sándalo": "#9a6a3f", "Vainilla y jazmín": "#f1dfae",
+    "Piña colada": "#f2d36b", "Palmera": "#4f9a5a", "La Frut": "#e86a5a", "Dulce popurrí": "#d27bb0",
+    "Vainilla y canela": "#e4c48c", "Mar Caribe": "#2aa7c9", "Chutney de arándano": "#b0283c", "Blueberry": "#1f4f93", "Citronela y limón": "#8dbb2c", "Fresa silvestre": "#c0262f", "Mandarina": "#ef7a2e", "Mango y tangerine": "#f39a2e", "Mango y mandarina": "#f39a2e"
+  };
+  window.BIPA_COLORS = COLORS; window.BIPA_AROMAS = AROMAS;
+
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function cm(n) { return String(n).replace(".", ","); }
+  function catName(id) { var c = (D.categorias || []).filter(function (x) { return x.id === id; })[0]; return c ? c.nombre : ""; }
+  function money(v) { return v == null || v === "" ? "Consultar" : (E.moneda || "S/") + " " + Number(v).toFixed(2); }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function store(k, v) { try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || "null"); localStorage.setItem(k, JSON.stringify(v)); } catch (e) { return null; } }
+
+  var I = {
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+    minus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg>',
+    wa: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s1 2.5 1.1 2.7c.1.2 1.9 2.9 4.6 4 1.7.7 2.4.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.4-.3z"/></svg>',
+    image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L6 21"/></svg>',
+    flame: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 0 2 1 3 2 3 0-3-.5-6 .5-9z"/></svg>'
+  };
+
+  var S = { idx: 0, color: null, aroma: null, cat: "todos", q: "", flame: true, spin: !reduce, scale: false, thumbs: {} };
+  var visor = null;
+
+  // ---------- Marca ----------
+  $("#footContact").innerHTML = [E.origen ? esc(E.origen) : "", E.web ? '<a href="https://' + esc(E.web.replace(/^https?:\/\//, "")) + '" target="_blank" rel="noopener">' + esc(E.web) + '</a>' : "",
+    E.instagram ? '<a href="https://instagram.com/' + esc(E.instagram) + '" target="_blank" rel="noopener">@' + esc(E.instagram) + '</a>' : ""].filter(Boolean).join(" · ");
+
+  function current() { return P[S.idx]; }
+
+  // ---------- Ficha ----------
+  function specsHtml(p) {
+    var m = p.modelo || {}, cells = [];
+    var ax = m.aprox ? "≈" : "";
+    if (m.alto) cells.push(["Alto", ax + cm(m.alto) + ' <small>cm</small>']);
+    if (m.diametro) cells.push(["Diámetro", ax + cm(m.diametro) + ' <small>cm</small>']);
+    if (p.pesoUnidad) cells.push([esc(p.pesoNombre || "Peso unidad"), esc(p.pesoUnidad).replace(/\s(kg|g)$/, ' <small>$1</small>')]);
+    var first = (p.presentaciones || [])[0];
+    if (first && cells.length < 4) {
+      var num = (first.contenido || "").match(/^\d+/);
+      cells.push([first.empaque || "Empaque", num ? num[0] + ' <small>' + esc(first.contenido.replace(/^\d+\s*/, "")) + '</small>' : '<small>' + esc(first.contenido) + '</small>']);
+    }
+    if (first && first.peso && cells.length < 3) cells.push(["Peso", esc(first.peso).replace(/\s(kg|g)$/, ' <small>$1</small>')]);
+    if (!cells.length) return "";
+    return '<dl class="specs" data-n="' + cells.length + '">' + cells.map(function (c) {
+      return '<div class="spec"><dt>' + c[0] + '</dt><dd>' + c[1] + '</dd></div>'; }).join("") + '</dl>';
+  }
+  function swatchBg(name) {
+    var c = COLORS[name];
+    if (c === "mix") return "conic-gradient(#c3302c 0 25%, #f1c232 0 50%, #3150b8 0 75%, #5e9e43 0)";
+    return c || "#ccc";
+  }
+
+  function renderDetail() {
+    var p = current(); if (!p) return;
+    var h = "";
+    var seals = (p.destacados || []).map(function (s) { return '<span class="seal">' + I.check + esc(s) + '</span>'; });
+    if (p.nota) seals.push('<span class="seal note">' + esc(p.nota) + '</span>');
+    if (seals.length) h += '<div class="chips-row">' + seals.join("") + '</div>';
+    if (p.descripcion) h += '<p class="desc">' + esc(p.descripcion) + '</p>';
+    h += specsHtml(p);
+    if (p.colores && p.colores.length) {
+      h += '<div><p class="group-label">Color<b id="colorName">' + esc(S.color) + '</b></p><div class="swatches">' + p.colores.map(function (c) {
+        return '<button class="swatch" data-color="' + esc(c) + '" aria-pressed="' + (c === S.color) + '" aria-label="' + esc(c) + '" title="' + esc(c) + '"><i style="background:' + swatchBg(c) + '"></i></button>';
+      }).join("") + '</div></div>';
+    }
+    if (p.aromas && p.aromas.length) {
+      h += '<div><p class="group-label">Aromas<b>' + p.aromas.length + ' disponibles</b></p><div class="chips-row">' + p.aromas.map(function (a) {
+        return '<button class="aroma" data-aroma="' + esc(a) + '" aria-pressed="' + (a === S.aroma) + '"><i style="background:' + (AROMAS[a] || "#aaa") + '"></i>' + esc(a) + '</button>';
+      }).join("") + '</div></div>';
+    }
+    if (p.presentaciones && p.presentaciones.length) {
+      h += '<div><p class="group-label">Presentaciones</p><div class="packs">' + p.presentaciones.map(function (pr) {
+        var meta = [pr.contenido, pr.peso].filter(Boolean).join(" · ");
+        return '<div class="pack"><div class="pack-main"><strong>' + esc(pr.empaque) + '</strong><span>' + esc(meta) + '</span></div>' + (pr.precio != null ? '<div class="pack-side"><span class="price has">' + money(pr.precio) + '</span></div>' : '') + '</div>';
+      }).join("") + '</div></div>';
+    }
+    h += '<div class="actions"><button class="btn wa" id="shareWa">' + I.wa + 'Enviar ficha por WhatsApp</button>' +
+         '<button class="btn primary" id="imgFicha">' + I.image + 'Ficha en imagen</button></div>';
+    $("#detail").innerHTML = h;
+  }
+
+  // ---------- Escenario ----------
+  function renderStage(animate) {
+    var p = current(); if (!p) return;
+    $("#eyebrow").textContent = catName(p.categoria);
+    $("#counter").textContent = pad(S.idx + 1) + " / " + pad(P.length);
+    var h1 = $("#pName");
+    if (animate && gs && !reduce) {
+      gs.timeline().to(h1, { y: -14, opacity: 0, duration: .22, ease: "power2.in" })
+        .add(function () { h1.textContent = p.nombre; })
+        .fromTo(h1, { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: .6, ease: "expo.out" });
+    } else h1.textContent = p.nombre;
+    document.title = p.nombre + " · Catálogo " + (E.nombre || "BIPA");
+  }
+
+  function select(i, opts) {
+    opts = opts || {};
+    if (!P.length) return;
+    S.idx = (i + P.length) % P.length;
+    var p = current();
+    S.color = p.colores && p.colores.length ? p.colores[0] : null;
+    S.aroma = p.aromas && p.aromas.length ? p.aromas[0] : null;
+    if (S.scale) setScale(false, true);
+    renderStage(opts.animate !== false);
+    renderDetail();
+    markCards();
+    if (visor) visor.show(p, { color: S.color, aroma: S.aroma, dir: opts.dir || 1 });
+    present.start = performance.now();
+    try { history.replaceState(null, "", "#" + p.id); } catch (e) {}
+    if (opts.scrollTop) {
+      var st = $("#stage");
+      var y = window.innerWidth >= 980 ? 0 : st.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: y, behavior: reduce ? "auto" : "smooth" });
+    }
+    if (gs && !reduce && opts.animate !== false) gs.from("#detail > *", { y: 14, opacity: 0, duration: .5, stagger: .05, ease: "power3.out", clearProps: "all" });
+  }
+
+  // ---------- Catálogo ----------
+  function filtered() {
+    var q = S.q.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    return P.map(function (p, i) { return { p: p, i: i }; }).filter(function (o) {
+      if (S.cat !== "todos" && o.p.categoria !== S.cat) return false;
+      if (!q) return true;
+      var hay = [o.p.nombre, o.p.descripcion, catName(o.p.categoria)].concat(o.p.aromas || [], o.p.colores || []).join(" ").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+      return hay.indexOf(q) > -1;
+    });
+  }
+  function renderCats() {
+    var cats = [{ id: "todos", nombre: "Todos" }].concat(D.categorias || []);
+    $("#cats").innerHTML = cats.map(function (c) {
+      var n = c.id === "todos" ? P.length : P.filter(function (p) { return p.categoria === c.id; }).length;
+      return '<button class="cat" data-cat="' + esc(c.id) + '" aria-pressed="' + (S.cat === c.id) + '">' + esc(c.nombre) + '<span>' + n + '</span></button>';
+    }).join("");
+  }
+  function cardMeta(p) {
+    var m = p.modelo || {}, pr = (p.presentaciones || [])[0];
+    var bits = [];
+    if (pr) bits.push(pr.empaque + " · " + pr.contenido);
+    return bits.join("");
+  }
+  function renderGrid() {
+    var list = filtered();
+    $("#catCount").textContent = list.length + (list.length === 1 ? " producto" : " productos");
+    if (!list.length) { $("#grid").innerHTML = '<p class="empty">No hay productos que coincidan con “' + esc(S.q) + '”. Prueba con otra palabra.</p>'; return; }
+    $("#grid").innerHTML = list.map(function (o) {
+      var p = o.p, m = p.modelo || {}, t = S.thumbs[p.id];
+      return '<button class="card" data-i="' + o.i + '" aria-current="' + (o.i === S.idx) + '">' +
+        '<div class="thumb"><span class="ph">' + esc(p.nombre.charAt(0)) + '</span>' + (t ? '<img class="on" src="' + t + '" alt="">' : '<img alt="">') +
+        (m.alto ? '<span class="cm">' + (m.aprox ? "≈" : "") + cm(m.alto) + ' cm</span>' : '') + '</div>' +
+        '<div class="card-body"><strong>' + esc(p.nombre) + '</strong><span>' + esc(cardMeta(p)) + '</span>' +
+        (p.colores && p.colores.length > 1 ? '<span class="dots" aria-label="' + p.colores.length + ' colores">' + p.colores.map(function (c) { return '<i style="background:' + swatchBg(c) + '" title="' + esc(c) + '"></i>'; }).join("") + '</span>' : '') +
+        '</div></button>';
+    }).join("");
+  }
+  function markCards() {
+    document.querySelectorAll(".card").forEach(function (c) { c.setAttribute("aria-current", String(+c.dataset.i === S.idx)); });
+  }
+
+
+  // ---------- Utilidades ----------
+  var toastT;
+  function toast(msg) { var t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove("show"); }, 1900); }
+
+  function setScale(on, silent) {
+    S.scale = on; $("#tScale").setAttribute("aria-pressed", String(on));
+    if (visor) visor.setScale(on, P, { color: S.color });
+    if (on) {
+      var n = P.filter(function (p) { return p.modelo && p.modelo.alto && p.modelo.tipo !== "cumple"; }).length;
+      $("#eyebrow").textContent = "Comparativa"; $("#counter").textContent = n + " productos";
+      $("#pName").textContent = "Todo a escala real";
+    } else if (!silent) renderStage(false);
+  }
+
+  // ---------- Eventos ----------
+  $("#prev").addEventListener("click", function () { select(S.idx - 1, { dir: -1 }); });
+  $("#next").addEventListener("click", function () { select(S.idx + 1, { dir: 1 }); });
+  $("#tScale").addEventListener("click", function () { setScale(!S.scale); });
+  $("#tFlame").addEventListener("click", function () { S.flame = !S.flame; this.setAttribute("aria-pressed", String(S.flame)); if (visor) visor.setFlame(S.flame); });
+  $("#tSpin").addEventListener("click", function () { S.spin = !S.spin; this.setAttribute("aria-pressed", String(S.spin)); if (visor) visor.setSpin(S.spin); });
+  $("#tSpin").setAttribute("aria-pressed", String(S.spin));
+  $("#brandLink").addEventListener("click", function (e) { e.preventDefault(); select(0, { scrollTop: true }); });
+  $("#searchJump").addEventListener("click", function () { $("#catalogo").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" }); setTimeout(function () { $("#q").focus({ preventScroll: true }); }, reduce ? 0 : 450); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && present.on) setPresent(false);
+    if (e.target.closest && e.target.closest("input, textarea")) return;
+    if (!$("#zoom").hidden) return;
+    if (e.key === "ArrowRight") select(S.idx + 1, { dir: 1 });
+    if (e.key === "ArrowLeft") select(S.idx - 1, { dir: -1 });
+  });
+  $("#q").addEventListener("input", function () { S.q = this.value; renderGrid(); });
+  $("#cats").addEventListener("click", function (e) { var b = e.target.closest(".cat"); if (!b) return; S.cat = b.dataset.cat; renderCats(); renderGrid(); });
+  $("#grid").addEventListener("click", function (e) { var c = e.target.closest(".card"); if (!c) return; var i = +c.dataset.i; select(i, { dir: i > S.idx ? 1 : -1, scrollTop: true }); });
+  $("#detail").addEventListener("click", function (e) {
+    var p = current(), b;
+    if ((b = e.target.closest(".swatch"))) { S.color = b.dataset.color; renderDetail(); if (visor) visor.restyle({ color: S.color, aroma: S.aroma }); return; }
+    if ((b = e.target.closest(".aroma"))) { S.aroma = b.dataset.aroma; renderDetail(); if (visor) visor.restyle({ color: S.color, aroma: S.aroma }); return; }
+    if (e.target.closest("#imgFicha")) fichaImage();
+    if (e.target.closest("#shareWa")) waFicha();
+  });
+  function openZoom(src, alt) {
+    var z = $("#zoom"), im = z.querySelector("img"); im.src = src; im.alt = alt || ""; z.hidden = false;
+    if (gs && !reduce) gs.fromTo(z, { opacity: 0 }, { opacity: 1, duration: .25 }), gs.fromTo(im, { scale: .94 }, { scale: 1, duration: .4, ease: "power3.out" });
+    z.querySelector(".zoom-close").focus({ preventScroll: true });
+  }
+  function closeZoom() { $("#zoom").hidden = true; $("#zoom").classList.remove("ficha"); }
+  $("#zoom").addEventListener("click", function (e) { if (e.target.closest(".zoom-actions")) return; closeZoom(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("#zoom").hidden) closeZoom(); });
+
+
+  // ---------- Modo presentación ----------
+  var present = { on: false, start: 0, dur: 7000, raf: 0 };
+  function setPresent(on) {
+    present.on = on;
+    $("#tPresent").setAttribute("aria-pressed", String(on));
+    var st = $("#stage");
+    st.classList.toggle("presenting", on);
+    cancelAnimationFrame(present.raf);
+    if (on) {
+      if (S.scale) setScale(false);
+      if (!S.spin) { S.spin = true; $("#tSpin").setAttribute("aria-pressed", "true"); if (visor) visor.setSpin(true); }
+      var fs = st.requestFullscreen || st.webkitRequestFullscreen;
+      if (fs && !(document.fullscreenElement || document.webkitFullscreenElement)) { try { var r = fs.call(st); if (r && r.catch) r.catch(function () {}); } catch (e) {} }
+      if (window.innerWidth < 980) window.scrollTo({ top: st.getBoundingClientRect().top + window.scrollY, behavior: reduce ? "auto" : "smooth" });
+      present.start = performance.now();
+      (function step() { present.raf = requestAnimationFrame(function (now) {
+        if (!present.on) return;
+        var k = (now - present.start) / present.dur;
+        if (k >= 1) { select(S.idx + 1, { dir: 1 }); present.start = now; k = 0; }
+        $("#presentProgress").style.width = (k * 100).toFixed(2) + "%"; step();
+      }); })();
+      toast("Presentación: los productos avanzan solos. Esc o el botón para salir");
+    } else {
+      $("#presentProgress").style.width = "0";
+      if (document.fullscreenElement || document.webkitFullscreenElement) { try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) {} }
+    }
+  }
+  ["fullscreenchange", "webkitfullscreenchange"].forEach(function (ev) {
+    document.addEventListener(ev, function () { if (!(document.fullscreenElement || document.webkitFullscreenElement) && present.on) setPresent(false); });
+  });
+
+  // ---------- Ficha en imagen (para WhatsApp / estados) ----------
+  function loadImg(src) { return new Promise(function (ok, ko) { var im = new Image(); im.onload = function () { ok(im); }; im.onerror = ko; im.src = src; }); }
+  function wrapText(c, text, maxW) {
+    var words = String(text).split(" "), lines = [], line = "";
+    words.forEach(function (w) { var t = line ? line + " " + w : w; if (c.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t; });
+    if (line) lines.push(line); return lines;
+  }
+  function track(c, text, x, y, em) {
+    var size = parseFloat(c.font.match(/(\d+(?:\.\d+)?)px/)[1]), cx = x;
+    for (var i = 0; i < text.length; i++) { c.fillText(text[i], cx, y); cx += c.measureText(text[i]).width + size * em; }
+    return cx - x;
+  }
+  var lastFicha = null;
+  // crea (o reutiliza) la imagen de la ficha del producto con el color y aroma elegidos
+  function makeFicha(p) {
+    var key = p.id + "|" + S.color + "|" + S.aroma;
+    if (lastFicha && lastFicha.key === key) return Promise.resolve(lastFicha);
+    var fonts = document.fonts ? Promise.all(["400 80px Gloock", "600 30px Figtree", "500 24px 'IBM Plex Mono'"].map(function (f) { return document.fonts.load(f).catch(function () {}); })) : Promise.resolve();
+    return Promise.all([visor.shot(p, { color: S.color, aroma: S.aroma }, 1100), loadImg("marca/logo-h.svg"), fonts])
+      .then(function (r) { return loadImg(r[0]).then(function (shot) { return composeFicha(p, shot, r[1]); }); })
+      .then(function (blob) { lastFicha = { key: key, blob: blob, url: URL.createObjectURL(blob), name: "BIPA-" + p.id + ".png", p: p }; return lastFicha; });
+  }
+  function showFicha(fi) { $("#zoom").classList.add("ficha"); openZoom(fi.url, "Ficha de " + fi.p.nombre); }
+  function fichaFile(fi) { try { return new File([fi.blob], fi.name, { type: "image/png" }); } catch (e) { return null; } }
+  function fichaImage() {
+    var p = current();
+    if (!p || !visor || !visor.shot) { toast("El visor 3D aún no está listo"); return; }
+    toast("Creando la ficha en imagen…");
+    makeFicha(p).then(showFicha).catch(function (e) { console.error(e); toast("No se pudo crear la imagen"); });
+  }
+  // WhatsApp: se envía solo la imagen de la ficha, sin texto ni enlace
+  function waFicha() {
+    var p = current();
+    if (!p || !visor || !visor.shot) { toast("El visor 3D aún no está listo"); return; }
+    toast("Preparando la ficha para WhatsApp…");
+    makeFicha(p).then(function (fi) {
+      var f = fichaFile(fi);
+      if (!dlCap && f && navigator.canShare && navigator.canShare({ files: [f] })) {
+        navigator.share({ files: [f] }).catch(function (e) {
+          // si el navegador pide un segundo toque, la ficha queda abierta con el botón Compartir
+          if (e && e.name !== "AbortError") { showFicha(fi); toast("Toca Compartir y elige WhatsApp"); }
+        });
+      } else { showFicha(fi); saveFicha("Se descargó la imagen: adjúntala en WhatsApp"); }
+    }).catch(function (e) { console.error(e); toast("No se pudo crear la imagen"); });
+  }
+  function composeFicha(p, shot, logo) {
+    var W = 1080, H = 1350, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+    var c = cv.getContext("2d"), m = p.modelo || {}, ax = m.aprox ? "≈ " : "";
+    c.fillStyle = "#fff"; c.fillRect(0, 0, W, H);
+    var g = c.createRadialGradient(450, 720, 120, 450, 720, 620); g.addColorStop(0, "rgba(238,244,232,1)"); g.addColorStop(1, "rgba(238,244,232,0)");
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.fillStyle = "#286a4d"; c.fillRect(0, H - 70, W, 70); c.fillStyle = "#95cf5f"; c.fillRect(0, H - 76, W, 6);
+    // logo y encabezado
+    var lh = 62; c.drawImage(logo, 64, 58, lh * logo.width / logo.height, lh);
+    c.fillStyle = "#286a4d"; c.font = "500 22px 'IBM Plex Mono', monospace";
+    track(c, catName(p.categoria).toUpperCase(), 66, 200, 0.14);
+    c.fillStyle = "#2a2422"; c.font = "400 76px Gloock, Georgia, serif";
+    var lines = wrapText(c, p.nombre, 800).slice(0, 2);
+    lines.forEach(function (l, i) { c.fillText(l, 62, 282 + i * 82); });
+    // producto en 3D
+    var top = 300 + lines.length * 82 - 40, boxH = 1050 - top, boxW = 980, k = Math.min(boxW / shot.width, boxH / shot.height);
+    c.drawImage(shot, 50 + (boxW - shot.width * k) / 2, top + (boxH - shot.height * k) / 2, shot.width * k, shot.height * k);
+    // medidas
+    var cells = [];
+    if (m.alto) cells.push(["ALTO", ax + cm(m.alto) + " cm"]);
+    if (m.diametro) cells.push(["DIÁMETRO", ax + cm(m.diametro) + " cm"]);
+    if (p.pesoUnidad) cells.push([(p.pesoNombre || "Peso").toUpperCase(), p.pesoUnidad]);
+    var pr = (p.presentaciones || [])[0]; if (pr && cells.length < 4) cells.push([(pr.empaque || "Empaque").toUpperCase(), pr.contenido]);
+    var x = 64, y = 1070, cw = (W - 128) / Math.max(cells.length, 1);
+    c.fillStyle = "#f6f8f3"; c.strokeStyle = "rgba(40,70,52,.14)"; c.lineWidth = 2;
+    c.beginPath(); c.roundRect ? c.roundRect(x - 4, y, cw * cells.length + 8, 118, 22) : c.rect(x - 4, y, cw * cells.length + 8, 118); c.fill(); c.stroke();
+    cells.forEach(function (cell, i) {
+      var cx = x + 22 + i * cw;
+      if (i) { c.strokeStyle = "rgba(40,70,52,.14)"; c.beginPath(); c.moveTo(cx - 22, y + 22); c.lineTo(cx - 22, y + 96); c.stroke(); }
+      c.fillStyle = "#286a4d"; c.font = "500 17px 'IBM Plex Mono', monospace"; track(c, cell[0], cx, y + 44, 0.12);
+      c.fillStyle = "#2a2422"; var fs = 38; c.font = "400 38px Gloock, Georgia, serif";
+      while (fs > 22 && c.measureText(String(cell[1])).width > cw - 36) { fs -= 2; c.font = "400 " + fs + "px Gloock, Georgia, serif"; }
+      c.fillText(String(cell[1]), cx, y + 92);
+    });
+    // colores o aromas
+    var y2 = 1240;
+    if (p.colores && p.colores.length) {
+      c.fillStyle = "#6d625e"; c.font = "600 22px Figtree, sans-serif"; c.fillText("Colores:", 64, y2);
+      var dx = 64 + c.measureText("Colores:").width + 16;
+      p.colores.forEach(function (name) { var col = COLORS[name]; c.beginPath(); c.arc(dx + 13, y2 - 8, 13, 0, 7);
+        if (col === "mix") { var gg = c.createConicGradient ? c.createConicGradient(0, dx + 13, y2 - 8) : null; if (gg) { ["#c3302c", "#f1c232", "#3150b8", "#5e9e43"].forEach(function (cc, j) { gg.addColorStop(j / 4, cc); gg.addColorStop((j + 1) / 4 - 0.001, cc); }); c.fillStyle = gg; } else c.fillStyle = "#c3302c"; }
+        else c.fillStyle = col || "#ccc";
+        c.fill(); c.strokeStyle = "rgba(0,0,0,.15)"; c.lineWidth = 1.5; c.stroke(); dx += 34; });
+    } else if (p.aromas && p.aromas.length) {
+      c.fillStyle = "#6d625e"; c.font = "600 22px Figtree, sans-serif";
+      c.fillText(wrapText(c, "Aromas: " + p.aromas.join(", "), W - 128)[0], 64, y2);
+    }
+    c.fillStyle = "#ffffff"; c.font = "500 20px 'IBM Plex Mono', monospace";
+    c.fillText([E.web, E.instagram ? "@" + E.instagram : ""].filter(Boolean).join("  ·  "), 64, H - 28);
+    return new Promise(function (ok) { cv.toBlob(function (b) { ok(b); }, "image/png"); });
+  }
+  function shareFicha() {
+    if (!lastFicha) return;
+    var f = fichaFile(lastFicha);
+    if (!dlCap && f && navigator.canShare && navigator.canShare({ files: [f] })) {
+      navigator.share({ files: [f] }).catch(function () {});
+    } else saveFicha("Se descargó la imagen para enviarla");
+  }
+  // descarga de archivos: en la página publicada es un enlace normal; dentro de la vista previa de
+  // claude.ai se pide permiso al visor (capacidad "downloads"), porque ahí los enlaces no descargan
+  var dlCap = null;
+  if (window.claude && window.claude.use) window.claude.use("downloads").then(function (d) { dlCap = d; }).catch(function () {});
+  function saveBlob(blob, name, okMsg) {
+    if (dlCap) {
+      dlCap.save({ filename: name, data: blob }).then(function () { if (okMsg) toast(okMsg); }).catch(function (e) {
+        if (!e || e.code !== "declined") toast("No se pudo descargar aquí: funciona en la página publicada");
+      });
+      return;
+    }
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+    if (okMsg) toast(okMsg);
+  }
+  function saveFicha(msg) { if (lastFicha) saveBlob(lastFicha.blob, lastFicha.name, msg); }
+
+  // ---------- Catálogo en PDF (imprimir / guardar como PDF) ----------
+  function buildPrint() {
+    var today = new Date().toLocaleDateString("es-VE", { year: "numeric", month: "long" });
+    var h = '<section class="pg pg-cover"><img class="logo" src="marca/logo.svg" alt="BIPA"><h1>Catálogo de productos</h1>' +
+      '<p>' + esc([E.origen, E.web, E.instagram ? "@" + E.instagram : ""].filter(Boolean).join(" · ")) + '</p><p>' + P.length + ' productos · ' + esc(today) + '</p></section>';
+    for (var i = 0; i < P.length; i += 6) {
+      h += '<section class="pg"><div class="pg-head"><img src="marca/logo-h.svg" alt="BIPA"><span>Catálogo de productos</span></div><div class="pg-grid">';
+      P.slice(i, i + 6).forEach(function (p) {
+        var m = p.modelo || {}, ax = m.aprox ? "≈" : "", dims = [];
+        if (m.alto) dims.push("Alto " + ax + cm(m.alto) + " cm"); if (m.diametro) dims.push("ø " + ax + cm(m.diametro) + " cm"); if (p.pesoUnidad) dims.push((p.pesoNombre || "Peso") + " " + p.pesoUnidad);
+        var packs = (p.presentaciones || []).slice(0, 3).map(function (pr) { return "<li>" + esc(pr.empaque + ": " + pr.contenido) + (pr.precio != null ? " · " + esc(money(pr.precio)) : "") + "</li>"; }).join("");
+        var extra = p.colores && p.colores.length ? "Colores: " + p.colores.join(", ") : p.aromas && p.aromas.length ? "Aromas: " + p.aromas.join(", ") : "";
+        h += '<article class="pi"><div class="im">' + (S.thumbs[p.id] ? '<img src="' + S.thumbs[p.id] + '" alt="">' : '') + '</div><div class="tx"><small>' + esc(catName(p.categoria)) + '</small><b>' + esc(p.nombre) + '</b>' +
+          (dims.length ? '<p>' + esc(dims.join(" · ")) + '</p>' : '') + (packs ? '<ul>' + packs + '</ul>' : '') + (extra ? '<p>' + esc(extra) + '</p>' : '') + '</div></article>';
+      });
+      h += '</div><div class="pg-foot">' + esc((E.nombre || "BIPA") + " · " + (E.lema || "")) + ' · Página ' + (i / 6 + 2) + '</div></section>';
+    }
+    $("#print").innerHTML = h;
+    return Promise.all([].map.call($("#print").querySelectorAll("img"), function (im) { return im.complete ? 1 : new Promise(function (ok) { im.onload = im.onerror = ok; }); }));
+  }
+  // PDF real (archivo), armado con las miniaturas 3D: se comparte por WhatsApp o se descarga.
+  // Si la librería no carga (sin internet la primera vez) se usa la impresión del navegador.
+  var JSPDF = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js", pdfBusy = false;
+  function loadScript(src) { return new Promise(function (ok, ko) { var s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = ko; document.head.appendChild(s); }); }
+  function pdfPages(logo, logoH, thumbs) {
+    var W = 1240, H = 1754, pages = [], today = new Date().toLocaleDateString("es-VE", { year: "numeric", month: "long" });
+    function page() { var cv = document.createElement("canvas"); cv.width = W; cv.height = H; var c = cv.getContext("2d"); c.fillStyle = "#fff"; c.fillRect(0, 0, W, H); pages.push(cv); return c; }
+    function rr(c, x, y, w, h, r) { c.beginPath(); if (c.roundRect) c.roundRect(x, y, w, h, r); else c.rect(x, y, w, h); }
+    // portada
+    var c = page();
+    c.fillStyle = "#286a4d"; c.fillRect(0, 0, 70, H); c.fillStyle = "#95cf5f"; c.fillRect(70, 0, 14, H);
+    var lw = 640; c.drawImage(logo, 190, 520, lw, lw * logo.height / logo.width);
+    c.fillStyle = "#2a2422"; c.font = "400 92px Gloock, Georgia, serif"; c.fillText("Catálogo de", 190, 1060); c.fillText("productos", 190, 1160);
+    c.fillStyle = "#6d625e"; c.font = "500 30px Figtree, sans-serif";
+    wrapText(c, [E.origen, E.web, E.instagram ? "@" + E.instagram : ""].filter(Boolean).join(" · "), 900).forEach(function (l, i) { c.fillText(l, 192, 1250 + i * 42); });
+    c.fillStyle = "#286a4d"; c.font = "500 24px 'IBM Plex Mono', monospace"; track(c, (P.length + " productos · " + today).toUpperCase(), 192, 1380, 0.12);
+    // productos, 6 por página
+    var per = 6, total = Math.ceil(P.length / per) + 1;
+    for (var i = 0; i < P.length; i += per) {
+      c = page();
+      c.fillStyle = "#286a4d"; c.fillRect(0, 0, W, 16);
+      var hh = 58; c.drawImage(logoH, 80, 60, hh * logoH.width / logoH.height, hh);
+      c.fillStyle = "#286a4d"; c.font = "500 20px 'IBM Plex Mono', monospace"; c.textAlign = "right"; c.fillText("CATÁLOGO DE PRODUCTOS", W - 80, 98); c.textAlign = "left";
+      P.slice(i, i + per).forEach(function (p, k) {
+        var col = k % 2, row = Math.floor(k / 2), cw = 525, ch = 470, x = 80 + col * (cw + 30), y = 170 + row * (ch + 24);
+        c.fillStyle = "#f6f8f3"; c.strokeStyle = "rgba(40,70,52,.14)"; c.lineWidth = 2; rr(c, x, y, cw, ch, 24); c.fill(); c.stroke();
+        var im = thumbs[p.id];
+        if (im) { var bw = cw - 40, bh = 236, s = Math.min(bw / im.width, bh / im.height); c.drawImage(im, x + 20 + (bw - im.width * s) / 2, y + 14 + (bh - im.height * s) / 2, im.width * s, im.height * s); }
+        var m = p.modelo || {}, ax = m.aprox ? "≈" : "", dims = [], ty = y + 284, tx = x + 28, tw = cw - 56;
+        if (m.alto) dims.push("Alto " + ax + cm(m.alto) + " cm"); if (m.diametro) dims.push("ø " + ax + cm(m.diametro) + " cm"); if (p.pesoUnidad) dims.push((p.pesoNombre || "Peso") + " " + p.pesoUnidad);
+        c.fillStyle = "#286a4d"; c.font = "500 16px 'IBM Plex Mono', monospace"; track(c, catName(p.categoria).toUpperCase(), tx, ty, 0.12);
+        c.fillStyle = "#2a2422"; var fs = 34; c.font = "400 34px Gloock, Georgia, serif";
+        while (fs > 24 && c.measureText(p.nombre).width > tw) { fs -= 2; c.font = "400 " + fs + "px Gloock, Georgia, serif"; }
+        c.fillText(p.nombre, tx, ty + 42);
+        var lines = [];
+        c.font = "500 19px Figtree, sans-serif";
+        if (dims.length) lines.push(["#2a2422", dims.join(" · ")]);
+        (p.presentaciones || []).slice(0, 2).forEach(function (pr) { lines.push(["#6d625e", "• " + pr.empaque + ": " + pr.contenido + (pr.precio != null ? " · " + money(pr.precio) : "")]); });
+        var extra = p.colores && p.colores.length ? "Colores: " + p.colores.join(", ") : p.aromas && p.aromas.length ? "Aromas: " + p.aromas.join(", ") : "";
+        if (extra) { var wl = wrapText(c, extra, tw); wl.slice(0, 2).forEach(function (l, j) { lines.push(["#6d625e", l + (j === 1 && wl.length > 2 ? "…" : "")]); }); }
+        lines.slice(0, 4).forEach(function (l, j) { c.fillStyle = l[0]; var t = l[1]; while (c.measureText(t).width > tw && t.length > 4) t = t.slice(0, -2) + "…"; c.fillText(t, tx, ty + 80 + j * 27); });
+      });
+      c.fillStyle = "#286a4d"; c.fillRect(0, H - 70, W, 70); c.fillStyle = "#95cf5f"; c.fillRect(0, H - 76, W, 6);
+      c.fillStyle = "#fff"; c.font = "500 20px 'IBM Plex Mono', monospace";
+      c.fillText([E.web, E.instagram ? "@" + E.instagram : ""].filter(Boolean).join("  ·  "), 80, H - 28);
+      c.textAlign = "right"; c.fillText("Página " + (i / per + 2) + " de " + total, W - 80, H - 28); c.textAlign = "left";
+    }
+    return pages;
+  }
+  function makePdf() {
+    var fonts = document.fonts ? Promise.all(["400 80px Gloock", "600 30px Figtree", "500 24px Figtree", "500 24px 'IBM Plex Mono'"].map(function (f) { return document.fonts.load(f).catch(function () {}); })) : Promise.resolve();
+    var thumbs = {};
+    return Promise.all([window.jspdf ? 1 : loadScript(JSPDF), loadImg("marca/logo.svg"), loadImg("marca/logo-h.svg"), fonts].concat(P.map(function (p) {
+      return S.thumbs[p.id] ? loadImg(S.thumbs[p.id]).then(function (im) { thumbs[p.id] = im; }).catch(function () {}) : 1;
+    }))).then(function (r) {
+      var pages = pdfPages(r[1], r[2], thumbs), doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4", compress: true });
+      pages.forEach(function (cv, i) { if (i) doc.addPage(); doc.addImage(cv.toDataURL("image/jpeg", 0.88), "JPEG", 0, 0, 210, 297); });
+      return doc.output("blob");
+    });
+  }
+  function printCatalog() {
+    if (pdfBusy) return; pdfBusy = true;
+    var t0 = Date.now();
+    (function wait() {
+      var n = Object.keys(S.thumbs).length;
+      if (n < P.length && visor && Date.now() - t0 < 25000) { toast("Preparando imágenes 3D… " + n + " de " + P.length); return setTimeout(wait, 500); }
+      toast("Creando el catálogo en PDF…");
+      makePdf().then(function (blob) {
+        pdfBusy = false;
+        var name = "Catalogo-BIPA.pdf", f = null;
+        try { f = new File([blob], name, { type: "application/pdf" }); } catch (e) {}
+        if (!dlCap && f && navigator.canShare && navigator.canShare({ files: [f] })) { navigator.share({ files: [f] }).catch(function () {}); return; }
+        saveBlob(blob, name, "Se descargó el catálogo en PDF");
+      }).catch(function (e) {
+        pdfBusy = false; console.warn("pdf", e);
+        buildPrint().then(function () { setTimeout(function () { window.print(); }, 150); });
+      });
+    })();
+  }
+
+  // ---------- Eventos de las herramientas de venta ----------
+  $("#tPresent").addEventListener("click", function () { setPresent(!present.on); });
+  $("#kitPresent").addEventListener("click", function () { setPresent(true); });
+  $("#kitImage").addEventListener("click", fichaImage);
+  $("#kitPdf").addEventListener("click", printCatalog);
+  $("#fichaShare").addEventListener("click", shareFicha);
+  $("#fichaSave").addEventListener("click", function () { saveFicha("Imagen descargada"); });
+
+  // swipe en el área de título para cambiar de producto
+  (function () {
+    var info = document.querySelector(".titleblock"), x0 = null;
+    info.addEventListener("touchstart", function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+    info.addEventListener("touchend", function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 50) select(S.idx + (dx < 0 ? 1 : -1), { dir: dx < 0 ? 1 : -1 }); x0 = null; });
+  })();
+
+  // ---------- Arranque ----------
+  var start = 0, hash = location.hash.replace("#", "");
+  P.forEach(function (p, i) { if (p.id === hash) start = i; });
+  renderCats(); renderGrid();
+  try { localStorage.removeItem("bipa-pedido"); } catch (e) {}
+  select(start, { animate: false });
+
+  function hideLoader() {
+    var l = $("#loader"); if (!l || l.dataset.done) return; l.dataset.done = "1";
+    if (gs && !reduce) {
+      gs.to(l, { opacity: 0, duration: .7, ease: "power2.out", onComplete: function () { l.hidden = true; } });
+      gs.from(".topbar, .tools .tool, .titleblock > *, .nav", { y: 16, opacity: 0, duration: .9, stagger: .06, ease: "expo.out", delay: .15, clearProps: "all" });
+      gs.from("#detail > *, #catalogo", { y: 22, opacity: 0, duration: .9, stagger: .06, ease: "expo.out", delay: .3, clearProps: "all" });
+      gs.fromTo("#hint", { opacity: 0 }, { opacity: 1, duration: .6, delay: 1.2 });
+      gs.to("#hint", { opacity: 0, duration: .6, delay: 4.5 });
+    } else l.hidden = true;
+  }
+  var loaderTimer = setTimeout(hideLoader, 7000);
+
+  if ("serviceWorker" in navigator && location.protocol === "https:" && window.top === window.self) {
+    window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+  }
+
+  window.BIPA_APP = {
+    attachVisor: function (v) {
+      visor = v;
+      v.setFlame(S.flame); v.setSpin(S.spin);
+      v.show(current(), { color: S.color, aroma: S.aroma, dir: 1, first: true });
+      v.onPick = function (id) { P.forEach(function (p, i) { if (p.id === id) select(i, { scrollTop: false }); }); };
+      v.onInteract = function () { if (gs) gs.to("#hint", { opacity: 0, duration: .3 }); };
+      clearTimeout(loaderTimer); setTimeout(hideLoader, 250);
+      v.makeThumbs(P, function (id, url) {
+        S.thumbs[id] = url;
+        var card = document.querySelector('.card[data-i="' + P.findIndex(function (p) { return p.id === id; }) + '"] img');
+        if (card) { card.src = url; requestAnimationFrame(function () { card.classList.add("on"); }); }
+      });
+    },
+    fail: function () {
+      clearTimeout(loaderTimer); hideLoader();
+      var h = document.getElementById("hint"); h.textContent = "El visor 3D no está disponible en este dispositivo"; h.style.opacity = 1;
+    }
+  };
+})();
+</script>
+
+<!-- ================= Visor 3D ================= -->
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const APP = window.BIPA_APP;
+const gsap = window.gsap;
+const COLORS = window.BIPA_COLORS, AROMAS = window.BIPA_AROMAS;
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const MIX = ["#c3302c", "#f1c232", "#3150b8", "#5e9e43", "#7647ad", "#f0a6bb", "#f4eee2", "#e8863a"];
+
+// las etiquetas se dibujan con la tipografía de la página: esperar a que cargue (máx. 1,5 s)
+let ANISO = 8;
+const go = () => { try { boot(); } catch (err) { console.error(err); APP && APP.fail(); } };
+const fontsReady = document.fonts && document.fonts.load
+  ? Promise.all(["700 40px Figtree", "600 40px Figtree", "500 40px Figtree"].map(f => document.fonts.load(f))) : Promise.resolve();
+Promise.race([fontsReady, new Promise(r => setTimeout(r, 1500))]).then(go, go);
+
+function boot() {
+  const canvas = document.getElementById("gl");
+  const stage = document.getElementById("stage");
+  const labelsEl = document.getElementById("labels");
+
+  // lienzo transparente: el fondo de estudio blanco lo dibuja el CSS
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
+  renderer.setClearColor(0x000000, 0);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  ANISO = Math.min(16, renderer.capabilities.getMaxAnisotropy() || 8);
+  renderer.toneMapping = THREE.NeutralToneMapping;   // colores fieles a las etiquetas reales
+  renderer.toneMappingExposure = 1.0;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+  const scene = new THREE.Scene();
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = 0.55;
+
+  const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 1000);
+  camera.position.set(0, 12, 40);
+
+  const controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true; controls.dampingFactor = 0.07;
+  controls.enablePan = false; controls.autoRotateSpeed = 1.1;
+  controls.minPolarAngle = 0.25; controls.maxPolarAngle = Math.PI / 2 - 0.02;
+  controls.rotateSpeed = 0.8;
+  controls.addEventListener("start", () => { V.onInteract && V.onInteract(); });
+
+  // ---------- Luces ----------
+  // estudio fotográfico: luz suave y neutra, un contraluz cálido y relleno frío
+  addStudioLights(scene);
+  const flameLight = new THREE.PointLight("#ff9a3c", 0, 0, 2); scene.add(flameLight);
+
+  // ---------- Texturas generadas ----------
+  const T = makeTextures();
+
+  // ---------- Pedestal ----------
+  const pedestal = new THREE.Group(); scene.add(pedestal);
+  // base blanca tipo cerámica con los dos verdes de la franja en el canto
+  const pedMat = new THREE.MeshStandardMaterial({ color: "#fbfbf8", roughness: 0.42, metalness: 0 });
+  const ped = new THREE.Mesh(new THREE.CylinderGeometry(1, 1.0, 0.07, 128), pedMat); ped.position.y = -0.035; pedestal.add(ped);
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(1.003, 1.003, 0.022, 128, 1, true), new THREE.MeshStandardMaterial({ color: "#286a4d", roughness: 0.5 }));
+  band.position.y = -0.047; pedestal.add(band);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.002, 0.0042, 8, 160), new THREE.MeshStandardMaterial({ color: "#95cf5f", roughness: 0.45 }));
+  ring.rotation.x = Math.PI / 2; ring.position.y = -0.012; pedestal.add(ring);
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(1, 64), new THREE.MeshBasicMaterial({ map: T.floorShade, transparent: true, depthWrite: false }));
+  floor.rotation.x = -Math.PI / 2; floor.position.y = -0.071; floor.scale.setScalar(1.9); pedestal.add(floor);
+  // sombra suave: un poco por encima de la base y con polygonOffset para que no parpadee
+  const blob = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({ map: T.blob, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }));
+  blob.rotation.x = -Math.PI / 2; blob.position.y = 0.04; scene.add(blob);
+
+
+  // ---------- Etiquetas HTML proyectadas ----------
+  let labels = [];
+  function clearLabels() { labels.forEach(l => l.el.remove()); labels = []; }
+  function addLabel(text, pos, cls, onClick) {
+    const el = document.createElement(onClick ? "button" : "div");
+    el.className = "lbl " + (cls || ""); el.textContent = text;
+    if (onClick) el.addEventListener("click", onClick);
+    labelsEl.appendChild(el); const l = { el, pos: pos.clone(), obj: null }; labels.push(l); return l;
+  }
+  const _v = new THREE.Vector3();
+  function placeLabels() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    for (const l of labels) {
+      _v.copy(l.pos); if (l.obj) l.obj.localToWorld(_v);
+      _v.project(camera);
+      const vis = _v.z < 1 && Math.abs(_v.x) < 1.2 && Math.abs(_v.y) < 1.2;
+      l.el.style.visibility = vis ? "visible" : "hidden";
+      if (!vis) continue;
+      const px = ((_v.x * 0.5 + 0.5) * w).toFixed(1), py = ((-_v.y * 0.5 + 0.5) * h).toFixed(1);
+      const isName = l.el.classList.contains("name");
+      if (isName && w < 700) l.el.style.transform = `translate(${px}px, ${py}px) translate(-100%, 0) rotate(-42deg)`;
+      else l.el.style.transform = `translate(${px}px, ${py}px) translate(-50%, ${isName ? "0" : "-50%"})`;
+    }
+  }
+
+  // ---------- Estado del visor ----------
+  let model = null, product = null, opts = {}, lineup = null, ruler = null, flameOn = true, sizeK = 1;
+  const flames = [];
+  const loader = new GLTFLoader();
+
+  function registerFlames(root) {
+    root.traverse(o => { if (o.userData.isFlame) flames.push(o); });
+  }
+  function unregister(root) {
+    root.traverse(o => { const i = flames.indexOf(o); if (i > -1) flames.splice(i, 1); });
+  }
+  function disposeTree(root) {
+    root.traverse(o => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (!m.userData.shared) m.dispose(); });
+    });
+  }
+  function applyFlame(root) {
+    root.traverse(o => {
+      if (o.userData.isFlame) o.visible = flameOn;
+      if (o.userData.isWax) o.material.emissiveIntensity = flameOn ? o.userData.glow * 0.55 : 0.0;
+      if (o.userData.isEmber) o.visible = flameOn;
+    });
+  }
+
+  function measure(root) {
+    const box = new THREE.Box3();
+    root.updateMatrixWorld(true);
+    root.traverse(o => { if ((o.isMesh || o.isInstancedMesh) && !o.userData.nofit) { const b = new THREE.Box3().setFromObject(o, true); box.union(b); } });
+    return box;
+  }
+
+  function buildRuler(p, box) {
+    const g = new THREE.Group(); const m = p.modelo || {}; const H = m.alto;
+    const lbls = [];
+    if (!H || m.escala === false) return { g, lbls };
+    const R = Math.max(box.max.x, -box.min.x, box.max.z, -box.min.z);
+    const x = -(R + Math.max(1.0, H * 0.09)), k = Math.max(0.25, H * 0.022);
+    const pts = [x, 0, 0, x, H, 0];
+    for (let c = 0; c <= Math.floor(H + 1e-6); c++) { const L = c % 5 === 0 ? k * 1.6 : k; pts.push(x, c, 0, x + L, c, 0); }
+    pts.push(x - k * 0.6, H, 0, x + k * 2.2, H, 0);
+    const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+    const line = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: "#286a4d", transparent: true, opacity: 0.6 }));
+    line.userData.nofit = true; g.add(line);
+    const ax = m.aprox ? "≈ " : "";
+    lbls.push(addLabel(ax + String(H).replace(".", ",") + " cm", new THREE.Vector3(x, H + k * 2.6, 0)));
+    if (m.diametro) {
+      const d = m.diametro, z = R + 0.6 + k, y = 0.02;
+      const dp = [-d / 2, y, z, d / 2, y, z, -d / 2, y, z - k * 0.6, -d / 2, y, z + k * 0.6, d / 2, y, z - k * 0.6, d / 2, y, z + k * 0.6];
+      const dg = new THREE.BufferGeometry(); dg.setAttribute("position", new THREE.Float32BufferAttribute(dp, 3));
+      const dl = new THREE.LineSegments(dg, line.material); dl.userData.nofit = true; g.add(dl);
+      lbls.push(addLabel("ø " + ax + String(d).replace(".", ",") + " cm", new THREE.Vector3(0, -k * 1.8, z + k)));
+    }
+    return { g, lbls };
+  }
+
+  function reserves() {
+    const w = stage.clientWidth, h = stage.clientHeight, mobile = w < 980;
+    return { top: mobile ? 96 : 120, bottom: mobile ? 170 : 160, w, h };
+  }
+  function fitCamera(box, { dur = 1.2, pad = 1.2, lineupMode = false } = {}) {
+    const size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
+    const { top, bottom, w, h } = reserves();
+    const usable = Math.max(0.35, (h - top - bottom) / h);
+    camera.setViewOffset(w, h, 0, (bottom - top) / 2, w, h); camera.updateProjectionMatrix();
+    const aspect = w / h, fov = THREE.MathUtils.degToRad(camera.fov);
+    const H = size.y, W = lineupMode ? size.x : Math.hypot(size.x, size.z);
+    const distH = (H / 2) / Math.tan(fov / 2) / usable;
+    const distW = (W / 2) / (Math.tan(fov / 2) * aspect) / (w < 980 ? 0.78 : 0.82);
+    const dist = Math.max(distH, distW) * pad + (lineupMode ? 0 : Math.max(size.x, size.z) * 0.5);
+    const target = center.clone();
+    const elev = lineupMode ? 0.14 : 0.26;
+    let az = lineupMode ? 0 : Math.atan2(camera.position.x - controls.target.x, camera.position.z - controls.target.z);
+    if (!isFinite(az)) az = 0;
+    const pos = new THREE.Vector3(target.x + Math.sin(az) * dist * Math.cos(elev), target.y + dist * Math.sin(elev), target.z + Math.cos(az) * dist * Math.cos(elev));
+    controls.minDistance = dist * 0.35; controls.maxDistance = dist * 2.2;
+    gsap && gsap.killTweensOf(camera.position); gsap && gsap.killTweensOf(controls.target);
+    if (dur && gsap && !reduce) {
+      gsap.to(camera.position, { x: pos.x, y: pos.y, z: pos.z, duration: dur, ease: "power3.inOut" });
+      gsap.to(controls.target, { x: target.x, y: target.y, z: target.z, duration: dur, ease: "power3.inOut" });
+    } else { camera.position.copy(pos); controls.target.copy(target); }
+    return dist;
+  }
+
+  function setStageScale(box) {
+    const size = box.getSize(new THREE.Vector3());
+    const foot = Math.max(size.x, size.z) / 2;
+    const R = Math.max(foot * 1.7, size.y * 0.36, 3);
+    sizeK = Math.max(size.y, size.x, size.z);
+    const d = reduce || !gsap ? 0 : 1.0;
+    if (d) { gsap.to(pedestal.scale, { x: R, y: R * 0.6 + 2, z: R, duration: d, ease: "power3.inOut" }); }
+    else pedestal.scale.set(R, R * 0.6 + 2, R);
+    blob.scale.setScalar(Math.max(foot * 1.7, 1.2));
+  }
+
+  function flameCenter(root) {
+    const pts = []; root.updateMatrixWorld(true);
+    root.traverse(o => { if (o.userData.isFlame) pts.push(o.getWorldPosition(new THREE.Vector3())); });
+    if (!pts.length) return null;
+    const c = new THREE.Vector3(); pts.forEach(p => c.add(p)); return c.divideScalar(pts.length);
+  }
+
+  function setFlameLight(root, box) {
+    const c = flameCenter(root);
+    const size = box.getSize(new THREE.Vector3()), k = Math.max(size.y, size.x) / 15;
+    if (c) { flameLight.position.copy(c).add(new THREE.Vector3(0, 2.2 + size.y * 0.12, 1.2)); flameLight.userData.base = 30 * k * k + 4; }
+    else flameLight.userData.base = 0;
+  }
+
+  function buildFor(p, o) {
+    if (p.glb) {
+      const g = new THREE.Group();
+      loader.load(p.glb, gl => {
+        const s = gl.scene; const b = new THREE.Box3().setFromObject(s); const sz = b.getSize(new THREE.Vector3());
+        const target = (p.modelo && p.modelo.alto) || 12; const k = target / (sz.y || 1);
+        s.scale.setScalar(k); const b2 = new THREE.Box3().setFromObject(s); const c = b2.getCenter(new THREE.Vector3());
+        s.position.set(-c.x, -b2.min.y, -c.z); g.add(s);
+        if (g === model) refit(false);
+      }, undefined, () => { g.add(buildModel(p, o)); if (g === model) refit(false); });
+      return g;
+    }
+    return buildModel(p, o);
+  }
+
+  function refit(animateCam = true) {
+    if (!model) return;
+    const box = measure(model);
+    if (ruler) { scene.remove(ruler.g); ruler.lbls.forEach(l => { l.el.remove(); labels.splice(labels.indexOf(l), 1); }); }
+    ruler = buildRuler(product, box); scene.add(ruler.g);
+    setStageScale(box); setFlameLight(model, box);
+    fitCamera(box, { dur: animateCam ? 1.2 : 0 });
+  }
+
+  function show(p, o = {}) {
+    product = p; opts = o;
+    exitLineup();
+    const old = model;
+    const m = buildFor(p, o);
+    model = m; scene.add(m); registerFlames(m); applyFlame(m);
+    const box = measure(m);
+    if (ruler) { scene.remove(ruler.g); disposeTree(ruler.g); ruler.lbls.forEach(l => { l.el.remove(); labels.splice(labels.indexOf(l), 1); }); }
+    ruler = buildRuler(p, box); scene.add(ruler.g);
+    setStageScale(box); setFlameLight(m, box);
+    const animate = gsap && !reduce && !o.first;
+    fitCamera(box, { dur: o.first ? 0 : 1.25 });
+    if (o.first && gsap && !reduce) {
+      // apertura: la cámara baja desde arriba y el producto emerge
+      const end = camera.position.clone();
+      camera.position.set(end.x * 1.6, end.y + sizeK * 2.2, end.z * 1.6);
+      gsap.to(camera.position, { x: end.x, y: end.y, z: end.z, duration: 2.4, ease: "expo.out", delay: 0.2 });
+      m.scale.setScalar(0.001); gsap.to(m.scale, { x: 1, y: 1, z: 1, duration: 1.6, ease: "elastic.out(1, 0.75)", delay: 0.6 });
+      flameLight.intensity = 0;
+    }
+    ruler.g.visible = false; ruler.lbls.forEach(l => l.el.style.opacity = 0);
+    const showRuler = () => { if (!ruler) return; ruler.g.visible = true; ruler.lbls.forEach(l => { l.el.style.transition = "opacity .5s"; l.el.style.opacity = 1; }); };
+    if (animate) {
+      gsap.killTweensOf(m.scale); gsap.killTweensOf(m.rotation);
+      m.scale.setScalar(0.001); m.rotation.y = -1.4 * (o.dir || 1);
+      gsap.to(m.scale, { x: 1, y: 1, z: 1, duration: 1.05, ease: "back.out(1.5)", delay: 0.22 });
+      gsap.to(m.rotation, { y: 0, duration: 1.4, ease: "expo.out", delay: 0.22 });
+      gsap.delayedCall(1.0, showRuler);
+    } else gsap ? gsap.delayedCall(o.first ? 1.6 : 0, showRuler) : showRuler();
+    if (old) {
+      if (animate) {
+        gsap.killTweensOf(old.scale);
+        gsap.to(old.rotation, { y: old.rotation.y + 1.2 * (o.dir || 1), duration: 0.35, ease: "power2.in" });
+        gsap.to(old.scale, { x: 0.001, y: 0.001, z: 0.001, duration: 0.32, ease: "power2.in", onComplete: () => { scene.remove(old); unregister(old); disposeTree(old); } });
+      } else { scene.remove(old); unregister(old); disposeTree(old); }
+    }
+  }
+
+  function restyle(o) {
+    if (!product || !model) return;
+    opts = Object.assign({}, opts, o);
+    const old = model; const m = buildFor(product, opts);
+    m.rotation.copy(old.rotation); m.scale.copy(old.scale);
+    scene.remove(old); unregister(old); disposeTree(old);
+    model = m; scene.add(m); registerFlames(m); applyFlame(m);
+    if (gsap && !reduce) gsap.fromTo(m.scale, { x: 0.94, y: 0.94, z: 0.94 }, { x: 1, y: 1, z: 1, duration: 0.6, ease: "back.out(2)" });
+  }
+
+  // ---------- Comparativa a escala ----------
+  function enterLineup(list) {
+    if (lineup) return;
+    const items = list.filter(p => p.modelo && p.modelo.alto && p.modelo.tipo !== "cumple").slice().sort((a, b) => a.modelo.alto - b.modelo.alto);
+    const g = new THREE.Group(); const gap = 2.6; let x = 0; const placed = [];
+    items.forEach(p => {
+      const m = buildModel(p, { color: (p.colores || [])[0], aroma: (p.aromas || [])[0], lineup: true });
+      const b = measure(m); const w = b.max.x - b.min.x;
+      m.position.x = x - b.min.x; m.userData.pid = p.id; x += w + gap; g.add(m); placed.push({ p, m, b });
+    });
+    const total = x - gap;
+    g.position.x = -total / 2;
+    const maxH = Math.max(...items.map(p => p.modelo.alto));
+    const top = Math.ceil(maxH / 5) * 5;
+    // regla y base
+    const rx = -total / 2 - 3.2, pts = [rx, 0, 0, rx, top, 0, rx, 0, 0, total / 2 + 2, 0, 0];
+    for (let c = 0; c <= top; c++) { const L = c % 5 === 0 ? 1.1 : 0.55; pts.push(rx, c, 0, rx + L, c, 0); }
+    for (let c = 5; c <= top; c += 5) pts.push(rx + 1.4, c, 0, total / 2 + 2, c, 0);
+    const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+    const lines = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: "#286a4d", transparent: true, opacity: 0.18 }));
+    lines.userData.nofit = true;
+    const base = new THREE.Mesh(new THREE.BoxGeometry(total + 12, 0.5, 16), pedMat); base.position.set(0, -0.25, 0); base.userData.nofit = true;
+    const group = new THREE.Group(); group.add(g, lines, base);
+    scene.add(group); registerFlames(group); applyFlame(group);
+    for (let c = 0; c <= top; c += 5) addLabel(c + " cm", new THREE.Vector3(rx - 1.6, c, 0), "tick");
+    placed.forEach(({ p, m, b }, i) => {
+      const wx = g.position.x + m.position.x + (b.min.x + b.max.x) / 2;
+      const short = p.nombre.replace(/^Velas? /i, "").replace(/^Velón /, "Velón ").replace(" o velación", "").replace(" en paquetes de 5", " ×5").replace(" 3 unidades", "");
+      const l = addLabel(short.charAt(0).toUpperCase() + short.slice(1), new THREE.Vector3(wx, -0.6, Math.max(b.max.z, 1) + 2.5), "name" + (i % 2 ? " alt" : ""), () => V.onPick && V.onPick(p.id));
+      l.el.title = p.nombre;
+    });
+    lineup = group;
+    if (model) model.visible = false;
+    if (ruler) { ruler.g.visible = false; ruler.lbls.forEach(l => l.el.style.display = "none"); }
+    pedestal.visible = false; blob.visible = false;
+    const box = new THREE.Box3(new THREE.Vector3(rx - 2, 0, -3), new THREE.Vector3(total / 2 + 2, top + 2, 3));
+    controls.autoRotate = false; controls.enablePan = true; controls.screenSpacePanning = true;
+    controls.minAzimuthAngle = -0.7; controls.maxAzimuthAngle = 0.7;
+    flameLight.position.set(0, maxH * 0.6, 12); flameLight.userData.base = 500;
+    fitCamera(box, { dur: 1.3, pad: 1.0, lineupMode: true });
+    controls.maxDistance *= 1.6; controls.minDistance *= 0.4;
+  }
+  function exitLineup() {
+    if (!lineup) return;
+    scene.remove(lineup); unregister(lineup); disposeTree(lineup); lineup = null;
+    labels.filter(l => l.el.classList.contains("tick") || l.el.classList.contains("name")).forEach(l => { l.el.remove(); labels.splice(labels.indexOf(l), 1); });
+    if (model) model.visible = true;
+    if (ruler) { ruler.g.visible = true; ruler.lbls.forEach(l => l.el.style.display = ""); }
+    pedestal.visible = true; blob.visible = true;
+    controls.enablePan = false; controls.minAzimuthAngle = -Infinity; controls.maxAzimuthAngle = Infinity;
+    controls.autoRotate = spin;
+  }
+
+  // tocar un producto en la comparativa abre su ficha
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(); let down = null;
+  canvas.addEventListener("pointerdown", e => { down = [e.clientX, e.clientY]; });
+  canvas.addEventListener("pointerup", e => {
+    if (!down || !lineup) return; const moved = Math.hypot(e.clientX - down[0], e.clientY - down[1]); down = null; if (moved > 6) return;
+    const r = canvas.getBoundingClientRect(); ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    const hit = ray.intersectObjects(lineup.children[0].children, true).find(h => h.object.isMesh && !h.object.userData.nofit);
+    let o = hit && hit.object; while (o && !o.userData.pid) o = o.parent;
+    if (o && V.onPick) V.onPick(o.userData.pid);
+  });
+
+  // ---------- Bucle ----------
+  let spin = true;
+  const clock = new THREE.Clock();
+  let running = true;
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return;
+    renderer.setSize(w, h, false); camera.aspect = w / h; const r = reserves(); camera.setViewOffset(w, h, 0, (r.bottom - r.top) / 2, w, h); camera.updateProjectionMatrix();
+  }
+  // al cambiar el tamaño del escenario (pantalla completa, girar el teléfono) se reencuadra el producto
+  let lastW = 0, lastH = 0, refitT = 0;
+  new ResizeObserver(() => {
+    resize();
+    const w = stage.clientWidth, h = stage.clientHeight;
+    if (lastW && (Math.abs(w - lastW) > 40 || Math.abs(h - lastH) > 40)) { clearTimeout(refitT); refitT = setTimeout(() => { if (lineup) return; if (model) refit(true); }, 180); }
+    lastW = w; lastH = h;
+  }).observe(stage);
+  resize();
+  document.addEventListener("visibilitychange", () => { running = !document.hidden; if (running) { clock.getDelta(); loop(); } });
+  const io = new IntersectionObserver(es => { const vis = es[0].isIntersecting; if (vis && !running && !document.hidden) { running = true; clock.getDelta(); loop(); } else if (!vis) running = false; });
+  io.observe(stage);
+
+  function loop() {
+    if (!running) return;
+    requestAnimationFrame(loop);
+    const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
+    controls.update();
+    for (const f of flames) animateFlame(f, t);
+    const roots = lineup ? [lineup] : model ? [model] : [];
+    roots.forEach(r => r.traverse(o => { if (o.userData.update) o.userData.update(dt, t); }));
+    // parpadeo de la luz de la llama
+    const base = flameOn ? (flameLight.userData.base || 0) : 0;
+    const flick = 1 + 0.12 * Math.sin(t * 12.7) + 0.08 * Math.sin(t * 23.1 + 1.3) + 0.05 * Math.sin(t * 5.3);
+    flameLight.intensity += (base * flick - flameLight.intensity) * Math.min(1, dt * 8);
+    renderer.render(scene, camera);
+    placeLabels();
+  }
+
+  // ---------- Miniaturas y fotos de producto (fondo transparente) ----------
+  let shotR = null;
+  function shotRenderer() {
+    if (shotR) return shotR;
+    const tr = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+    tr.setPixelRatio(1); tr.setClearColor(0x000000, 0);
+    tr.toneMapping = THREE.NeutralToneMapping; tr.toneMappingExposure = 1.0; tr.outputColorSpace = THREE.SRGBColorSpace;
+    const ts = new THREE.Scene();
+    const pm = new THREE.PMREMGenerator(tr); ts.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; ts.environmentIntensity = 0.6;
+    addStudioLights(ts);
+    const pl = new THREE.PointLight("#ff9a3c", 0, 0, 2); ts.add(pl);
+    const sh = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({ map: T.blob, transparent: true, depthWrite: false, opacity: 0.85 }));
+    sh.rotation.x = -Math.PI / 2; sh.position.y = 0.01; sh.userData.nofit = true; ts.add(sh);
+    const cam = new THREE.PerspectiveCamera(28, 1, 0.1, 1000);
+    return (shotR = { tr, ts, pl, sh, cam });
+  }
+  function renderShot(p, o, size, frame = 1.3) {
+    const { tr, ts, pl, sh, cam } = shotRenderer();
+    tr.setSize(size, size, false);
+    const m = buildModel(p, Object.assign({ thumb: true }, o));
+    // el vidrio con transmisión deja un recuadro gris en la imagen transparente: en la foto se usa vidrio simple
+    m.traverse(x => { const mt = x.material; (Array.isArray(mt) ? mt : mt ? [mt] : []).forEach(q => { if (q.transmission > 0) { q.transmission = 0; q.opacity = Math.min(q.opacity, 0.22); q.depthWrite = false; } }); });
+    ts.add(m);
+    const b = measure(m);
+    // incluir la llama en el encuadre (no cuenta en measure) para que no quede cortada
+    m.traverse(x => { if (x.userData.isFlame) { const wp = x.getWorldPosition(new THREE.Vector3()); wp.y += x.userData.size * 2.4; b.expandByPoint(wp); } });
+    const sz = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
+    // sombra centrada bajo el producto y sin salirse del encuadre (si no, se ve un recuadro en la ficha)
+    sh.position.set(c.x, 0.01, c.z); sh.scale.setScalar(Math.min(Math.max(sz.x, sz.z) * 0.62 + 0.6, Math.max(sz.x, sz.y) * 0.62));
+    const fov = THREE.MathUtils.degToRad(cam.fov);
+    const dist = Math.max(sz.y, sz.x * 0.95) / 2 / Math.tan(fov / 2) * frame + sz.z * 0.5;
+    cam.position.set(c.x + dist * 0.42, c.y + dist * 0.3, c.z + dist * 0.86); cam.lookAt(c);
+    const fc = flameCenter(m);
+    if (fc && flameOn) { pl.position.copy(fc).add(new THREE.Vector3(0, 2.2 + sz.y * 0.12, 1.2)); const kk = Math.max(sz.y, sz.x) / 15; pl.intensity = 30 * kk * kk + 4; } else pl.intensity = 0;
+    applyFlame(m);
+    m.traverse(x => { if (x.userData.isFlame) animateFlame(x, 0.4); });
+    tr.render(ts, cam);
+    const url = tr.domElement.toDataURL(size > 600 ? "image/png" : "image/webp", 0.88);
+    ts.remove(m); disposeTree(m);
+    return url;
+  }
+  function makeThumbs(list, cb) {
+    try { shotRenderer(); } catch (e) { return; }
+    let i = 0;
+    const step = () => {
+      if (i >= list.length) return;
+      const p = list[i++];
+      try { cb(p.id, renderShot(p, { color: (p.colores || [])[0], aroma: (p.aromas || [])[0] }, 512)); } catch (e) { console.warn("miniatura", p.id, e); }
+      (window.requestIdleCallback || requestAnimationFrame)(step);
+    };
+    list.forEach(p => { if (!p.glb) texSources(p).forEach(src => T.photoLabel(src)); });
+    Promise.all(T.pending).then(() => setTimeout(step, 600));
+  }
+  // foto grande del producto actual para la ficha en imagen
+  function shot(p, o, size = 1100) {
+    texSources(p).forEach(src => T.photoLabel(src));
+    return Promise.all(T.pending).then(() => renderShot(p, o, size, 1.12));
+  }
+
+  // ---------- API ----------
+  const V = {
+    show, restyle,
+    setFlame(on) { flameOn = on; if (model) applyFlame(model); if (lineup) applyFlame(lineup); },
+    setSpin(on) { spin = on; if (!lineup) controls.autoRotate = on; },
+    setScale(on, list) { if (on) enterLineup(list); else { exitLineup(); if (model) refit(true); } },
+    makeThumbs, shot, onPick: null, onInteract: null
+  };
+  if (/[?&]debug\b/.test(location.search)) window.__V = Object.assign(V, { debug: () => ({ box: model && measure(model), cam: camera.position.toArray(), target: controls.target.toArray(), min: controls.minDistance, max: controls.maxDistance }) });
+  loop();
+  APP.attachVisor(V);
+  // pasar referencias a los constructores
+  function buildModel(p, o) { return makeModel(p, o, T); }
+}
+
+function addStudioLights(scene) {
+  scene.add(new THREE.HemisphereLight("#ffffff", "#dfe3d8", 1.05));
+  const key = new THREE.DirectionalLight("#fff6ea", 1.9); key.position.set(-30, 50, 40); scene.add(key);
+  const rim = new THREE.DirectionalLight("#ffd9b0", 1.1); rim.position.set(35, 25, -45); scene.add(rim);
+  const fill = new THREE.DirectionalLight("#e4eeff", 0.55); fill.position.set(40, 8, 30); scene.add(fill);
+}
+
+/* =====================================================================
+   Llama
+   ===================================================================== */
+function makeFlame(T, size = 1) {
+  const g = new THREE.Group();
+  // mezcla normal (no aditiva): sobre un fondo blanco la llama aditiva desaparecería
+  const outer = new THREE.Sprite(new THREE.SpriteMaterial({ map: T.flame, depthWrite: false, transparent: true, toneMapped: false, color: new THREE.Color(1.0, 0.72, 0.4) }));
+  outer.center.set(0.5, 0.06); outer.scale.set(size, 2.6 * size, 1);
+  const core = new THREE.Sprite(new THREE.SpriteMaterial({ map: T.flameCore, depthWrite: false, transparent: true, toneMapped: false, color: new THREE.Color(1, 0.95, 0.78) }));
+  core.center.set(0.5, 0.05); core.scale.set(0.42 * size, 1.05 * size, 1);
+  const blue = new THREE.Sprite(new THREE.SpriteMaterial({ map: T.glow, depthWrite: false, transparent: true, toneMapped: false, color: new THREE.Color(0.25, 0.42, 0.95), opacity: 0.4 }));
+  blue.position.y = 0.12 * size; blue.scale.set(0.5 * size, 0.42 * size, 1);
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: T.glow, depthWrite: false, transparent: true, toneMapped: false, color: new THREE.Color(1.0, 0.72, 0.35), opacity: 0.12 }));
+  halo.position.y = 0.95 * size; halo.scale.setScalar(5 * size);
+  [outer, core, blue, halo].forEach(s => s.userData.nofit = true);
+  g.add(halo, blue, outer, core);
+  g.userData = { isFlame: true, outer, core, halo, size, ph: Math.random() * 100 };
+  return g;
+}
+function animateFlame(f, t) {
+  const u = f.userData, s = u.size, ph = u.ph;
+  const k = 1 + 0.07 * Math.sin(t * 11 + ph) + 0.05 * Math.sin(t * 17.3 + ph * 1.7) + 0.035 * Math.sin(t * 29.1 + ph * 3.1);
+  u.outer.scale.set(s * (1 - (k - 1) * 0.7), s * 2.6 * k, 1);
+  u.core.scale.set(s * 0.42, s * 1.05 * (1 + (k - 1) * 0.5), 1);
+  const sway = Math.sin(t * 2.1 + ph) * 0.05 * s + Math.sin(t * 6.3 + ph) * 0.02 * s;
+  u.outer.position.x = sway; u.core.position.x = sway * 0.45;
+  u.halo.material.opacity = 0.07 + (k - 1) * 0.35;
+}
+
+/* =====================================================================
+   Texturas en canvas (sin archivos externos)
+   ===================================================================== */
+function canvasTex(w, h, draw, opts = {}) {
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  draw(c.getContext("2d"), w, h);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = opts.linear ? THREE.NoColorSpace : THREE.SRGBColorSpace;
+  t.anisotropy = ANISO;
+  if (opts.wrap) { t.wrapS = t.wrapT = THREE.RepeatWrapping; }
+  return t;
+}
+function drawLeaf(ctx, x, y, s, mono) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s / 40, s / 40);
+  if (mono) { ctx.strokeStyle = mono; ctx.fillStyle = mono; ctx.lineWidth = 2.4; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(20, 35); ctx.lineTo(20, 19); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(20, 22); ctx.bezierCurveTo(12.5, 22, 8, 16.8, 8, 9); ctx.bezierCurveTo(15.6, 9, 20, 14, 20, 22); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(20, 18.5); ctx.bezierCurveTo(26.6, 18.5, 31, 13.9, 31, 7); ctx.bezierCurveTo(24.2, 7, 20, 11.3, 20, 18.5); ctx.fill();
+    ctx.restore(); return; }
+  ctx.strokeStyle = "#93c15c"; ctx.lineWidth = 2.4; ctx.lineCap = "round";
+  ctx.beginPath(); ctx.moveTo(20, 35); ctx.lineTo(20, 19); ctx.stroke();
+  ctx.fillStyle = "#93c15c"; ctx.beginPath(); ctx.moveTo(20, 22); ctx.bezierCurveTo(12.5, 22, 8, 16.8, 8, 9); ctx.bezierCurveTo(15.6, 9, 20, 14, 20, 22); ctx.fill();
+  ctx.fillStyle = "#4f7a2c"; ctx.beginPath(); ctx.moveTo(20, 18.5); ctx.bezierCurveTo(26.6, 18.5, 31, 13.9, 31, 7); ctx.bezierCurveTo(24.2, 7, 20, 11.3, 20, 18.5); ctx.fill();
+  ctx.restore();
+}
+function spacedWidth(c, text, em) {
+  const size = parseFloat((c.font.match(/(\d+(?:\.\d+)?)px/) || [0, 16])[1]);
+  const chars = [...text];
+  return chars.reduce((a, ch) => a + c.measureText(ch).width, 0) + size * em * (chars.length - 1);
+}
+// texto con espaciado entre letras (no todos los navegadores tienen ctx.letterSpacing)
+function spaced(c, text, x, y, em = 0.12) {
+  const size = parseFloat((c.font.match(/(\d+(?:\.\d+)?)px/) || [0, 16])[1]), sp = size * em;
+  const chars = [...text], total = spacedWidth(c, text, em), align = c.textAlign;
+  let cx = align === "center" ? x - total / 2 : align === "right" ? x - total : x;
+  c.textAlign = "left";
+  chars.forEach(ch => { c.fillText(ch, cx, y); cx += c.measureText(ch).width + sp; });
+  c.textAlign = align;
+}
+// etiqueta de la línea de velones BIPA (misma plantilla que el Velón Nro. 1 y Nro. 4 reales)
+function drawVelonLabel(c, x0, lw, lh, title) {
+  const X = f => x0 + f * lw, Y = f => f * lh, F = (wt, f) => `${wt} ${Math.round(f * lh)}px Figtree, sans-serif`;
+  const GREEN = "#6fa53f", BROWN = "#6e4c42", BEIGE = "#ecdcd0", PAPER = "#f8f6f1";
+  c.save(); c.beginPath(); c.rect(x0, 0, lw, lh); c.clip();
+  c.fillStyle = PAPER; c.fillRect(x0, 0, lw, lh);
+  // adornos beige: aro, hojas y ramita
+  c.fillStyle = BEIGE; c.beginPath(); c.arc(X(0.07), Y(0.16), lh * 0.12, 0, 7); c.fill();
+  c.fillStyle = PAPER; c.beginPath(); c.arc(X(0.07), Y(0.16), lh * 0.065, 0, 7); c.fill();
+  c.fillStyle = BEIGE;
+  c.beginPath(); c.ellipse(X(0.12), Y(0.37), lh * 0.035, lh * 0.075, 0.5, 0, 7); c.fill();
+  c.beginPath(); c.ellipse(X(0.2), Y(0.07), lh * 0.03, lh * 0.06, -0.5, 0, 7); c.fill();
+  c.strokeStyle = BEIGE; c.lineWidth = lh * 0.012; c.beginPath(); c.moveTo(X(0.87), Y(0.48)); c.lineTo(X(0.87), Y(0.15)); c.stroke();
+  [[-1, 0.19], [1, 0.26], [-1, 0.33], [1, 0.4]].forEach(([s, y]) => { c.beginPath(); c.ellipse(X(0.87) + s * lh * 0.045, Y(y), lh * 0.022, lh * 0.05, s * 0.9, 0, 7); c.fill(); });
+  c.beginPath(); c.arc(X(0.96), Y(0.06), lh * 0.06, 0, 7); c.fill();
+  // bloque verde con el logo
+  c.fillStyle = GREEN; c.fillRect(X(0.27), 0, lw * 0.46, Y(0.44));
+  drawLeaf(c, X(0.5) - lh * 0.08, Y(0.06), lh * 0.16, "#ffffff");
+  c.fillStyle = "#fff"; c.textAlign = "center"; c.font = F(500, 0.095); spaced(c, "BIPA", X(0.5), Y(0.375), 0.3);
+  // nombre del producto
+  c.textAlign = "left"; c.fillStyle = BROWN; c.font = F(700, 0.07);
+  c.save(); c.translate(X(0.035), Y(0.535)); c.scale(0.86, 1); c.fillText(title, 0, 0); c.restore();
+  // franja verde
+  c.fillStyle = GREEN; c.fillRect(X(0.03), Y(0.56), lw * 0.6, lh * 0.195);
+  c.fillStyle = "#fff"; c.font = F(700, 0.074);
+  c.save(); c.translate(X(0.05), Y(0.632)); c.scale(0.86, 1); c.fillText("EXTRA", 0, 0); c.fillText("DURACIÓN", 0, lh * 0.068); c.restore();
+  c.font = F(600, 0.036);
+  c.save(); c.translate(X(0.05), Y(0.742)); c.scale(0.86, 1); c.fillText("BAJA EMISIÓN DE HUMO", 0, 0); c.restore();
+  // código de barras (ilustrativo)
+  c.fillStyle = "#1d1b19"; let bx = X(0.68); const b0 = lw * 0.0042;
+  for (let i = 0; i < 60 && bx < X(0.94); i++) { const bw = b0 * (1 + ((i * 7 + 3) % 4 === 0 ? 2 : (i * 5) % 3 === 0 ? 1 : 0)); c.fillRect(bx, Y(0.56), bw, lh * 0.17); bx += bw + b0 * (1 + (i * 3) % 2); }
+  // precauciones
+  c.fillStyle = BROWN; c.font = F(700, 0.028); c.fillText("PRECAUCIONES:", X(0.035), Y(0.8));
+  c.font = F(500, 0.024);
+  ["Mantenga fuera del alcance de los niños.", "Encienda sobre superficie resistente al calor.", "Fabricado por: Grupo ERAS, C.A.", "Valera, Edo. Trujillo."].forEach((s, i) => c.fillText(s, X(0.035), Y(0.833 + i * 0.03)));
+  // sello "Hecho en Trujillo"
+  const sx = X(0.63), sy = Y(0.845), sr = lh * 0.072;
+  c.strokeStyle = "#8b6d60"; c.lineWidth = lh * 0.006; c.beginPath(); c.arc(sx, sy, sr, 0, 7); c.stroke(); c.beginPath(); c.arc(sx, sy, sr * 0.8, 0, 7); c.stroke();
+  c.fillStyle = "#8b6d60"; c.fillRect(sx - sr * 1.02, sy - lh * 0.022, sr * 2.04, lh * 0.044);
+  c.fillStyle = PAPER; c.textAlign = "center"; c.font = F(700, 0.031); c.fillText("TRUJILLO", sx, sy + lh * 0.011);
+  // pie
+  c.fillStyle = "#ecd8ca"; c.fillRect(x0, Y(0.94), lw, lh * 0.06);
+  c.fillStyle = BROWN; c.font = F(600, 0.03); c.fillText("@productosbipa     www.productosbipa.com", X(0.5), Y(0.983));
+  c.restore();
+}
+// coco entero y medio coco, como el dibujo de la etiqueta real
+function drawCoconut(c, x, y, s) {
+  c.save();
+  c.fillStyle = "#3c8f3e";
+  [[-0.95, -0.55, -0.9], [-0.7, -0.75, -0.4], [0.9, 0.55, 0.7]].forEach(([dx, dy, a]) => { c.beginPath(); c.ellipse(x + dx * s, y + dy * s, s * 0.12, s * 0.42, a, 0, 7); c.fill(); });
+  c.fillStyle = "#8a5a2e"; c.beginPath(); c.arc(x + s * 0.38, y - s * 0.12, s * 0.58, 0, 7); c.fill();
+  c.strokeStyle = "rgba(70,40,15,.55)"; c.lineWidth = s * 0.03;
+  for (let i = 0; i < 9; i++) { const a = -2.6 + i * 0.32; c.beginPath(); c.arc(x + s * 0.38, y - s * 0.12, s * (0.2 + (i % 3) * 0.12), a, a + 0.9); c.stroke(); }
+  c.fillStyle = "#5c3618"; c.beginPath(); c.ellipse(x - s * 0.28, y + s * 0.2, s * 0.56, s * 0.46, -0.25, 0, 7); c.fill();
+  c.fillStyle = "#f8f5ee"; c.beginPath(); c.ellipse(x - s * 0.28, y + s * 0.18, s * 0.43, s * 0.34, -0.25, 0, 7); c.fill();
+  c.fillStyle = "rgba(160,170,190,.35)"; c.beginPath(); c.ellipse(x - s * 0.36, y + s * 0.22, s * 0.22, s * 0.15, -0.25, 0, 7); c.fill();
+  c.restore();
+}
+function makeTextures() {
+  const T = {};
+  T.flame = canvasTex(128, 320, (c, w, h) => {
+    c.filter = "blur(7px)";
+    const g = c.createRadialGradient(w / 2, h * 0.78, 4, w / 2, h * 0.7, h * 0.62);
+    g.addColorStop(0, "rgba(255,248,225,1)"); g.addColorStop(0.22, "rgba(255,210,120,1)"); g.addColorStop(0.55, "rgba(255,130,40,.85)"); g.addColorStop(1, "rgba(200,60,0,0)");
+    c.fillStyle = g; c.beginPath();
+    c.moveTo(w / 2, 14); c.bezierCurveTo(w * 0.86, h * 0.45, w * 0.92, h * 0.78, w / 2, h - 16); c.bezierCurveTo(w * 0.08, h * 0.78, w * 0.14, h * 0.45, w / 2, 14); c.fill();
+  });
+  T.flameCore = canvasTex(64, 160, (c, w, h) => {
+    c.filter = "blur(5px)";
+    const g = c.createRadialGradient(w / 2, h * 0.75, 2, w / 2, h * 0.7, h * 0.55);
+    g.addColorStop(0, "rgba(255,255,255,1)"); g.addColorStop(0.5, "rgba(255,240,200,.9)"); g.addColorStop(1, "rgba(255,200,120,0)");
+    c.fillStyle = g; c.beginPath(); c.ellipse(w / 2, h * 0.62, w * 0.3, h * 0.36, 0, 0, Math.PI * 2); c.fill();
+  });
+  T.glow = canvasTex(128, 128, (c, w, h) => {
+    const g = c.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+    g.addColorStop(0, "rgba(255,255,255,1)"); g.addColorStop(0.25, "rgba(255,255,255,.45)"); g.addColorStop(1, "rgba(255,255,255,0)");
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+  });
+  T.dot = canvasTex(32, 32, (c, w, h) => {
+    const g = c.createRadialGradient(16, 16, 0, 16, 16, 16); g.addColorStop(0, "rgba(255,255,255,1)"); g.addColorStop(1, "rgba(255,255,255,0)"); c.fillStyle = g; c.fillRect(0, 0, w, h);
+  });
+  T.blob = canvasTex(128, 128, (c, w, h) => {
+    const g = c.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); g.addColorStop(0, "rgba(20,30,20,.55)"); g.addColorStop(0.45, "rgba(20,30,20,.28)"); g.addColorStop(1, "rgba(20,30,20,0)"); c.fillStyle = g; c.fillRect(0, 0, w, h);
+  });
+  // sombra suave de la base sobre el piso del estudio
+  T.floorShade = canvasTex(256, 256, (c, w, h) => {
+    const g = c.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); g.addColorStop(0, "rgba(30,60,40,.20)"); g.addColorStop(0.5, "rgba(30,60,40,.12)"); g.addColorStop(0.75, "rgba(30,60,40,.04)"); g.addColorStop(1, "rgba(30,60,40,0)"); c.fillStyle = g; c.fillRect(0, 0, w, h);
+  });
+  T.smoke = canvasTex(64, 64, (c, w, h) => {
+    c.filter = "blur(4px)"; const g = c.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2 - 4); g.addColorStop(0, "rgba(255,255,255,.9)"); g.addColorStop(1, "rgba(255,255,255,0)"); c.fillStyle = g; c.fillRect(0, 0, w, h);
+  });
+  // brillo cálido de la cera: más luminoso arriba (cerca de la llama)
+  // brillo cálido de la cera: decae suavemente desde la llama (sin quiebres visibles)
+  const smoothGlow = (k) => canvasTex(4, 256, (c, w, h) => {
+    for (let y = 0; y < h; y++) { const v = Math.round(255 * Math.exp(-(y / h) * k)); c.fillStyle = `rgb(${v},${v},${v})`; c.fillRect(0, y, w, 1); }
+  });
+  T.waxGlow = smoothGlow(5.5);
+  T.waxGlowLow = smoothGlow(3.6); // para piezas bajas (velones, lamparitas)
+  // brillo irregular de la cera (vetas y poros), sin relieve para evitar artefactos en piezas lejanas
+  T.waxBump = canvasTex(256, 256, (c, w, h) => {
+    let s = 1234567; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    const img = c.createImageData(w, h);
+    for (let i = 0; i < w * h; i++) { const v = 225 + (rnd() - 0.5) * 50; img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = v; img.data[i * 4 + 3] = 255; }
+    c.putImageData(img, 0, 0);
+    c.filter = "blur(1.4px)"; c.drawImage(c.canvas, 0, 0); c.filter = "none";
+    for (let x = 0; x < w; x += 2) { const v = rnd() > 0.5 ? 255 : 0; c.fillStyle = `rgba(${v},${v},${v},${rnd() * 0.06})`; c.fillRect(x, 0, 2, h); }
+  }, { wrap: true, linear: true });
+  T.waxBump.repeat.set(4, 3);
+  const cache = {};
+  T.pending = [];
+  const tl = new THREE.TextureLoader();
+  T.photoLabel = (src) => {
+    const k = "photo:" + src; if (cache[k]) return cache[k];
+    let resolve; T.pending.push(new Promise(r => { resolve = r; setTimeout(r, 8000); }));
+    const t = tl.load(src, () => { t.userData.loaded = true; t.userData.onload.forEach(f => { try { f(t); } catch (e) { } }); resolve(); }, undefined, () => resolve());
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = ANISO; t.userData.onload = [];
+    cache[k] = t; return t;
+  };
+  T.whenLoaded = (t, f) => { if (t.userData.loaded) f(t); else t.userData.onload.push(f); };
+  // color de los costados de una caja: promedio de una franja cerca del borde de la foto
+  T.sideColor = (src, mat) => {
+    const k = "side:" + src;
+    const apply = col => mat.color.copy(col);
+    if (cache[k]) return apply(cache[k]);
+    T.whenLoaded(T.photoLabel(src), t => {
+      if (!cache[k]) {
+        const img = t.image, cv = document.createElement("canvas"); cv.width = 8; cv.height = 32;
+        const cx = cv.getContext("2d"); cx.drawImage(img, img.width * 0.07, img.height * 0.3, img.width * 0.1, img.height * 0.45, 0, 0, 8, 32);
+        const d = cx.getImageData(0, 0, 8, 32).data; let r = 0, gg = 0, b = 0, n = 0;
+        for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 200) continue; r += d[i]; gg += d[i + 1]; b += d[i + 2]; n++; }
+        cache[k] = n ? new THREE.Color().setRGB(r / n / 255, gg / n / 255, b / n / 255, THREE.SRGBColorSpace) : new THREE.Color("#eeeeee");
+      }
+      apply(cache[k]);
+    });
+  };
+  T.label = (kind, text, ratio = 2.6) => {
+    const k = "lbl:" + kind + ":" + text + ":" + ratio.toFixed(2); if (cache[k]) return cache[k];
+    let t;
+    if (kind === "velon") t = canvasTex(3072, Math.round(3072 / ratio), (c, w, h) => {
+      c.clearRect(0, 0, w, h);
+      const lw = Math.round(w * 0.42);
+      drawVelonLabel(c, (w - lw) / 2, lw, h, text);
+    });
+    else if (kind === "band") t = canvasTex(1024, 256, (c, w, h) => {
+      const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "#5b8a33"); g.addColorStop(1, "#3f6623"); c.fillStyle = g; c.fillRect(0, 0, w, h);
+      c.fillStyle = "#f7f2e6"; c.fillRect(0, 16, w, 6); c.fillRect(0, h - 22, w, 6);
+      drawLeaf(c, w / 2 - 230, 70, 110); c.fillStyle = "#fff"; c.textAlign = "left"; c.font = "700 92px Figtree, sans-serif"; c.fillText("B I P A", w / 2 - 110, 150);
+      c.font = "600 34px 'IBM Plex Mono', monospace"; c.fillStyle = "#e7f2d5"; c.fillText(text, w / 2 - 106, 200);
+    });
+    cache[k] = t; return t;
+  };
+  // costados de la tarjeta de cumpleaños: fucsia arriba, blanco al centro, turquesa abajo
+  T.cardSide = (head, foot) => {
+    const k = "card:" + head + ":" + foot; if (cache[k]) return cache[k];
+    const t = canvasTex(8, 512, (c, w, h) => {
+      c.fillStyle = "#f3f1f8"; c.fillRect(0, 0, w, h);
+      c.fillStyle = "#d60f50"; c.fillRect(0, 0, w, h * head);
+      c.fillStyle = "#19bfae"; c.fillRect(0, h * foot, w, h * (1 - foot));
+    });
+    cache[k] = t; return t;
+  };
+  // etiqueta de las velas aromáticas (misma línea gráfica de la vela de Coco del catálogo)
+  T.jarLabel = (aroma) => {
+    const k = "jar:" + aroma; if (cache[k]) return cache[k];
+    const t = canvasTex(3072, 820, (c, w, h) => {
+      c.clearRect(0, 0, w, h);
+      const lw = Math.round(w * 0.6), x0 = (w - lw) / 2, X = f => x0 + f * lw, Y = f => f * h;
+      const GREEN = "#3fae5a";
+      c.save(); c.beginPath(); c.rect(x0, 0, lw, h); c.clip();
+      c.fillStyle = "#f5f2f6"; c.fillRect(x0, 0, lw, h);
+      c.fillStyle = "#ddd3c7"; c.beginPath(); c.ellipse(X(0.1), Y(0.95), lw * 0.13, h * 0.36, 0.1, 0, 7); c.fill();
+      c.fillStyle = "#c9a789"; c.beginPath(); c.ellipse(X(0.02), Y(0.74), lw * 0.05, h * 0.26, 0.25, 0, 7); c.fill();
+      c.fillStyle = "#e5e0d9"; c.beginPath(); c.ellipse(X(0.92), Y(0.16), lw * 0.12, h * 0.3, -0.2, 0, 7); c.fill();
+      c.fillStyle = "#ebe6df"; c.beginPath(); c.ellipse(X(0.95), Y(0.88), lw * 0.1, h * 0.32, 0, 0, 7); c.fill();
+      c.fillStyle = "#c9a789"; c.beginPath(); c.ellipse(X(0.995), Y(0.12), lw * 0.03, h * 0.12, 0, 0, 7); c.fill();
+      c.fillStyle = "#dcd7de"; for (let i = 0; i < 6; i++) c.fillRect(X(0.8 + i * 0.013), Y(0.3), lw * 0.004, h * 0.42);
+      c.fillStyle = GREEN; c.beginPath(); c.arc(X(1.0), Y(0.45), h * 0.12, Math.PI / 2, Math.PI * 1.5); c.fill();
+      c.beginPath(); c.arc(X(0.025), Y(0.8), h * 0.09, -Math.PI / 2, Math.PI / 2); c.fill();
+      // trazo verde en forma de "e"
+      c.strokeStyle = GREEN; c.lineWidth = h * 0.075; c.lineCap = "butt";
+      c.beginPath(); c.arc(X(0.12), Y(0.34), h * 0.2, Math.PI * 0.08, Math.PI * 1.78); c.stroke();
+      c.beginPath(); c.moveTo(X(0.12) - h * 0.2, Y(0.34)); c.quadraticCurveTo(X(0.12), Y(0.27), X(0.12) + h * 0.4, Y(0.2)); c.stroke();
+      const coco = /^coco$/i.test(aroma.trim());
+      if (coco) drawCoconut(c, X(0.5), Y(0.33), h * 0.19);
+      const name = aroma.toUpperCase();
+      c.textAlign = "center"; c.fillStyle = "#c19366";
+      let fs = coco ? 0.1 : 0.115; c.font = `600 ${Math.round(h * fs)}px Figtree, sans-serif`;
+      while (spacedWidth(c, name, 0.14) > lw * 0.62 && fs > 0.06) { fs -= 0.005; c.font = `600 ${Math.round(h * fs)}px Figtree, sans-serif`; }
+      spaced(c, name, X(0.5), Y(coco ? 0.67 : 0.52), 0.14);
+      if (coco) { c.fillStyle = "#7d7772"; c.font = `500 ${Math.round(h * 0.055)}px Figtree, sans-serif`; spaced(c, "buena vibra", X(0.5), Y(0.76), 0.18); }
+      drawLeaf(c, X(0.5) - h * 0.05, Y(0.78), h * 0.1, GREEN);
+      c.fillStyle = "#6f6b72"; c.font = `500 ${Math.round(h * 0.07)}px Figtree, sans-serif`; spaced(c, "BIPA", X(0.5), Y(0.95), 0.3);
+      c.restore();
+    });
+    cache[k] = t; return t;
+  };
+  return T;
+}
+function roundRect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+
+/* =====================================================================
+   Modelos 3D procedurales, en centímetros reales
+   ===================================================================== */
+function waxMat(T, color, glow = 0.4, low = false) {
+  const c = new THREE.Color(color);
+  return new THREE.MeshStandardMaterial({ color: c, roughness: 0.56, metalness: 0, roughnessMap: T.waxBump,
+    emissive: c.clone().lerp(new THREE.Color("#ffb070"), 0.22), emissiveMap: low ? T.waxGlowLow : T.waxGlow, emissiveIntensity: glow, envMapIntensity: 0.7 });
+}
+function tagWax(mesh, glow) { mesh.userData.isWax = true; mesh.userData.glow = glow; return mesh; }
+function lathe(points, mat, seg = 64) {
+  const g = new THREE.LatheGeometry(points.map(([x, y]) => new THREE.Vector2(Math.max(0, x), y)), seg);
+  g.computeVertexNormals();
+  // UV vertical proporcional a la altura real (para que el brillo de la cera sea suave)
+  const pos = g.attributes.position, uv = g.attributes.uv; let maxY = 0;
+  for (let i = 0; i < pos.count; i++) maxY = Math.max(maxY, pos.getY(i));
+  for (let i = 0; i < pos.count; i++) uv.setY(i, pos.getY(i) / (maxY || 1));
+  return new THREE.Mesh(g, mat);
+}
+// perfil con esquinas redondeadas: rc es un radio o una lista de radios por vértice
+function roundedPath(pts, rc, seg = 6) {
+  const out = [pts[0]];
+  for (let i = 1; i < pts.length - 1; i++) {
+    const [px, py] = pts[i - 1], [cx, cy] = pts[i], [nx, ny] = pts[i + 1];
+    const r = Array.isArray(rc) ? rc[i] : rc;
+    if (!r) { out.push(pts[i]); continue; }
+    const l1 = Math.hypot(px - cx, py - cy), l2 = Math.hypot(nx - cx, ny - cy);
+    const k1 = Math.min(r, l1 / 2) / l1, k2 = Math.min(r, l2 / 2) / l2;
+    const ax = cx + (px - cx) * k1, ay = cy + (py - cy) * k1, bx = cx + (nx - cx) * k2, by = cy + (ny - cy) * k2;
+    for (let s = 0; s <= seg; s++) { const t = s / seg, u = 1 - t; out.push([u * u * ax + 2 * u * t * cx + t * t * bx, u * u * ay + 2 * u * t * cy + t * t * by]); }
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
+}
+function taperProfile(h, d) {
+  const r = d / 2, tip = Math.min(d * 0.85, h * 0.1), top = h - tip, rt = r * 0.86;
+  const p = [[0, 0], [r * 0.93, 0], [r, r * 0.08]];
+  for (let i = 0; i <= 10; i++) { const t = i / 10; p.push([r - (r - rt) * t * t, h * 0.06 + (top - h * 0.06) * t]); }
+  for (let i = 1; i <= 12; i++) { const a = (i / 12) * Math.PI / 2; p.push([rt * Math.cos(a), top + tip * Math.sin(a)]); }
+  return p;
+}
+function pillarProfile(h, d, dip = 0.35) {
+  const r = d / 2, b = Math.min(r * 0.12, 0.35);
+  return [[0, 0], [r - b, 0], [r - b * 0.3, b * 0.3], [r, b], [r, h - b], [r - b * 0.25, h - b * 0.25], [r - b, h], [r * 0.72, h - dip * 0.6], [r * 0.36, h - dip * 0.95], [0, h - dip]];
+}
+// velón BIPA: cuerpo recto y remate en anillos escalonados, como el producto real
+function steppedProfile(h, d, steps = 3) {
+  const r = d / 2, s = Math.min(h * 0.16, d * 0.21), st = s / steps, hb = h - s;
+  const rings = steps === 3 ? [0.87, 0.67, 0.44] : [0.8, 0.5];
+  const pts = [[0, 0], [r, 0], [r, hb]], rc = [0, Math.min(0.18, r * 0.06), Math.min(0.42, r * 0.16)];
+  let y = hb;
+  rings.forEach(k => { pts.push([r * k, y]); rc.push(st * 0.55); y += st; pts.push([r * k, y]); rc.push(st * 0.5); });
+  pts.push([0, y]); rc.push(0);
+  return { pts: roundedPath(pts, rc), top: y };
+}
+// lamparita de semanario: cuerpo recto y cúpula con surcos en espiral
+function grooveDome(h, d, rings = 5) {
+  const r = d / 2, dh = Math.min(1.1, h * 0.28), hb = h - dh, N = 90;
+  const pts = [[0, 0], [r * 0.97, 0], [r, 0.12], [r, hb]];
+  for (let i = 1; i <= N; i++) {
+    const t = i / N, a = t * Math.PI / 2, g = 0.055 * (0.5 - 0.5 * Math.cos(t * rings * 2 * Math.PI));
+    pts.push([(r - g) * Math.cos(a), hb + (dh - g) * Math.sin(a)]);
+  }
+  return pts;
+}
+function wick(group, y, len = 0.7, r = 0.055, lit = true) {
+  const geo = new THREE.CylinderGeometry(r * 0.8, r, len, 8); geo.translate(0, len / 2, 0);
+  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: lit ? "#241a12" : "#efe9dc", roughness: 0.9 }));
+  m.position.y = y; m.rotation.z = 0.08; m.userData.nofit = true; group.add(m);
+  if (!lit) return y + len;
+  const tipEmber = new THREE.Mesh(new THREE.SphereGeometry(r * 1.1, 8, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 0.7, 0.15), toneMapped: false }));
+  tipEmber.position.set(Math.sin(0.08) * -len, y + len, 0); tipEmber.userData.isEmber = true; tipEmber.userData.nofit = true; group.add(tipEmber);
+  return y + len;
+}
+function flatLabel(T, e, z) {
+  const geo = new THREE.PlaneGeometry(e.ancho, e.alto);
+  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: T.photoLabel(e.src), transparent: true, alphaTest: 0.5, roughness: 0.5, side: THREE.DoubleSide }));
+  mesh.position.set(0, e.centro, z); mesh.userData.nofit = true;
+  return mesh;
+}
+// caja impresa: la foto del empaque al frente y atrás, los costados del color del empaque
+function printedBox(T, src, w, h, d) {
+  const face = new THREE.MeshStandardMaterial({ map: T.photoLabel(src), roughness: 0.5, alphaTest: 0.5 });
+  const side = new THREE.MeshStandardMaterial({ color: "#eeeeee", roughness: 0.6 });
+  T.sideColor(src, side);
+  return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), [side, side, side, side, face, face]);
+}
+function stone(r = 1.7) {
+  const geo = new THREE.SphereGeometry(r, 48, 32), pos = geo.attributes.position, v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const n = 1 + 0.11 * Math.sin(v.x * 2.1 + v.y * 1.3) + 0.08 * Math.sin(v.z * 3.7 - v.x * 1.7) + 0.04 * Math.sin(v.y * 7.1 + v.z * 2.3);
+    v.multiplyScalar(n); pos.setXYZ(i, v.x, v.y, v.z);
+  }
+  geo.computeVertexNormals();
+  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: "#d8d1c4", roughness: 0.96 }));
+  m.scale.set(1.5, 0.6, 1.15); m.position.y = r * 0.6 * 0.8;
+  return m;
+}
+// varita de incienso o varilla repelente encendida (la punta es la brasa)
+function burningStick(coatColor, len, thick, bare) {
+  const s = new THREE.Group();
+  const core = new THREE.Mesh(new THREE.CylinderGeometry(thick * 0.36, thick * 0.36, len * bare + 0.4, 8), new THREE.MeshStandardMaterial({ color: "#caa271", roughness: 0.75 }));
+  core.position.y = (len * bare + 0.4) / 2; s.add(core);
+  const cl = len * (1 - bare);
+  const coat = new THREE.Mesh(new THREE.CylinderGeometry(thick, thick, cl, 14), new THREE.MeshStandardMaterial({ color: coatColor, roughness: 0.95 }));
+  coat.position.y = len * bare + cl / 2; s.add(coat);
+  const ash = new THREE.Mesh(new THREE.CylinderGeometry(thick * 0.92, thick, 0.5, 14), new THREE.MeshStandardMaterial({ color: "#a39d93", roughness: 1 }));
+  ash.position.y = len + 0.25; s.add(ash);
+  const tip = new THREE.Mesh(new THREE.SphereGeometry(thick * 0.98, 14, 10), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 0.8, 0.2), toneMapped: false }));
+  tip.scale.y = 0.55; tip.position.y = len + 0.52; tip.userData.isEmber = true; s.add(tip);
+  s.userData.tip = tip;
+  return s;
+}
+function addSmoke(g, T, origin, k = 1) {
+  const puffs = [], base = new THREE.SpriteMaterial({ map: T.smoke, color: "#d8cfc2", transparent: true, depthWrite: false, opacity: 0 });
+  for (let i = 0; i < 18; i++) { const sp = new THREE.Sprite(base.clone()); sp.userData = { life: i / 18, ph: Math.random() * 6, nofit: true, isEmber: true }; g.add(sp); puffs.push(sp); }
+  const holder = new THREE.Object3D(); holder.userData.nofit = true; g.add(holder);
+  holder.userData.update = (dt, t) => {
+    for (const sp of puffs) {
+      const u = sp.userData; u.life += dt * 0.15; if (u.life > 1) u.life -= 1;
+      const L = u.life;
+      sp.position.set(origin.x + Math.sin(L * 4 + u.ph + t * 0.3) * L * 1.6 * k, origin.y + L * 11 * k, origin.z + Math.cos(L * 3 + u.ph) * L * 0.8 * k);
+      const s = (0.35 + L * 3) * k; sp.scale.set(s, s * 1.4, 1); sp.material.opacity = Math.sin(L * Math.PI) * 0.17;
+    }
+  };
+}
+function colorOf(name, i = 0) {
+  const c = COLORS[name];
+  if (!c) return "#f4eee2";
+  if (c === "mix") return MIX[i % MIX.length];
+  return c;
+}
+function texSources(p) {
+  const out = [], add = v => { if (typeof v === "string") { if (/\.(png|jpe?g|webp)$/i.test(v)) out.push(v); } else if (v && typeof v === "object") Object.values(v).forEach(add); };
+  add(p.modelo || {});
+  return out;
+}
+
+function makeModel(p, o, T) {
+  const m = p.modelo || {}, tipo = m.tipo || "velon";
+  const g = new THREE.Group();
+  const cname = o.color || (p.colores || [])[0];
+  const mixed = cname === "Colores mixtos";
+  const color = colorOf(cname);
+  const aroma = o.aroma || (p.aromas || [])[0];
+  const aromaColor = AROMAS[aroma] || "#e9dcc0";
+
+  if (tipo === "cirio") {
+    const h = m.alto || 18, d = m.diametro || 1.9;
+    const body = tagWax(lathe(taperProfile(h, d), waxMat(T, color, 0.45)), 0.45); g.add(body);
+    const top = wick(g, h - 0.12, Math.min(0.75, 0.3 + d * 0.2));
+    const f = makeFlame(T, 0.95); f.position.y = top - 0.05; g.add(f);
+  }
+  else if (tipo === "votiva") {
+    // lamparita súper: cuerpo recto y remate redondeado en dos anillos
+    const h = m.alto || 4.5, d = m.diametro || 3.5, sp = steppedProfile(h, d, 2);
+    g.add(tagWax(lathe(sp.pts, waxMat(T, color, 0.24, true), 72), 0.24));
+    const top = wick(g, sp.top - 0.06, 0.6); const f = makeFlame(T, 0.9); f.position.y = top - 0.05; g.add(f);
+  }
+  else if (tipo === "velon") {
+    const h = m.alto || 12.5, d = m.diametro || 5.6;
+    let prof, topY;
+    if (m.tope === "plano") { prof = pillarProfile(h, d, 0.14); topY = h - 0.14; }
+    else { const sp = steppedProfile(h, d, 3); prof = sp.pts; topY = sp.top; }
+    g.add(tagWax(lathe(prof, waxMat(T, color, 0.22, true), 96), 0.22));
+    const e = m.etiqueta || {};
+    if (e.src) {
+      // etiqueta real (foto desenrollada), centrada al frente
+      const lg = new THREE.CylinderGeometry(d / 2 * 1.006, d / 2 * 1.006, e.alto, 128, 1, true);
+      const lbl = new THREE.Mesh(lg, new THREE.MeshStandardMaterial({ map: T.photoLabel(e.src), transparent: true, alphaTest: 0.5, roughness: 0.55 }));
+      lbl.position.y = e.centro; lbl.rotation.y = Math.PI; g.add(lbl);
+    } else if (m.etiqueta !== false) {
+      // etiqueta con el diseño de la línea de velones (misma plantilla que Nro. 1 y Nro. 4)
+      const lblH = e.alto || Math.min(6.8, h * 0.55);
+      const lg = new THREE.CylinderGeometry(d / 2 * 1.006, d / 2 * 1.006, lblH, 128, 1, true);
+      const title = p.nombre.toUpperCase().replace("#", "NRO. ").replace(/\s+/g, " ");
+      const lbl = new THREE.Mesh(lg, new THREE.MeshStandardMaterial({ map: T.label("velon", title, Math.PI * d / lblH), transparent: true, alphaTest: 0.5, roughness: 0.55 }));
+      lbl.position.y = e.centro || h * 0.47; lbl.rotation.y = Math.PI; g.add(lbl);
+    }
+    const top = wick(g, topY - 0.05, 0.75); const f = makeFlame(T, 1.15); f.position.y = top - 0.05; g.add(f);
+  }
+  else if (tipo === "paquete5") {
+    const h = m.alto || 13.5, d = m.diametro || 1.3, sp = d * 1.02;
+    for (let i = 0; i < 5; i++) { const c = tagWax(lathe(taperProfile(h, d), waxMat(T, color, 0.12), 40), 0.12); c.position.x = (i - 2) * sp; g.add(c); }
+    const e = m.etiqueta || {};
+    const bw = sp * 5 + 0.1, bh = e.alto || 4.1, bd = d + 0.1;
+    const plain = new THREE.MeshStandardMaterial({ color: "#f3eee7", roughness: 0.7 });
+    const front = e.src ? new THREE.MeshStandardMaterial({ map: T.photoLabel(e.src), roughness: 0.6 }) : plain;
+    const hide = new THREE.MeshBasicMaterial({ visible: false });
+    const band = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), [plain, plain, hide, hide, front, plain]);
+    band.position.y = e.centro || h * 0.36; g.add(band);
+  }
+  else if (tipo === "bolsa") {
+    // bolsa real (foto enderezada) con las 5 velas de verdad detrás de la ventana transparente
+    const b = m.bolsa || {}, W = b.ancho || 8.6, H = b.alto || 17.4, TH = 2.0, seal = 0.9;
+    const h = m.alto || 13.5, d = m.diametro || 1.3, sp = Math.min(d * 1.18, (W - 1.2) / 5), y0 = (H - h) / 2 + 0.3;
+    for (let i = 0; i < 5; i++) { const c = tagWax(lathe(taperProfile(h, d), waxMat(T, color, 0.1), 40), 0.1); c.position.set((i - 2) * sp, y0, 0); g.add(c); }
+    const geo = new THREE.BoxGeometry(W, H, TH, 32, 64, 1), pos = geo.attributes.position, edge = H / 2 - seal;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+      const fx = 1 - Math.pow(Math.abs(x) / (W / 2), 6), ay = Math.abs(y), fy = ay >= edge ? 0 : 1 - Math.pow(ay / edge, 12);
+      pos.setZ(i, Math.sign(z) * (0.03 + (TH / 2 - 0.03) * Math.sqrt(Math.max(0, fx * fy))));
+    }
+    geo.computeVertexNormals(); geo.translate(0, H / 2, 0);
+    const face = new THREE.MeshPhysicalMaterial({ map: b.src ? T.photoLabel(b.src) : null, color: b.src ? "#ffffff" : "#2f6f9a", transparent: true, roughness: 0.32, clearcoat: 0.6, clearcoatRoughness: 0.25 });
+    const rim = new THREE.MeshStandardMaterial({ color: "#e9e6dc", roughness: 0.4, transparent: true, opacity: 0.6 });
+    g.add(new THREE.Mesh(geo, [rim, rim, rim, rim, face, face]));
+  }
+  else if (tipo === "paquito") {
+    const h = m.alto || 12, d = m.diametro || 3.7;
+    for (let i = 0; i < 3; i++) { const c = tagWax(lathe(pillarProfile(h, d, -0.25), waxMat(T, color, 0.12, true), 48), 0.12); c.position.x = (i - 1) * (d + 0.02); g.add(c); }
+    const wrap = new THREE.Mesh(new THREE.BoxGeometry(d * 3 + 0.2, h + 0.1, d + 0.12), new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.05, metalness: 0, transparent: true, opacity: 0.035, depthWrite: false, envMapIntensity: 1.5 }));
+    wrap.position.y = h / 2; wrap.userData.nofit = true; g.add(wrap);
+    if (m.etiqueta && m.etiqueta.src) g.add(flatLabel(T, m.etiqueta, d / 2 + 0.08));
+    else {
+      const side = new THREE.MeshStandardMaterial({ color: "#4a7a2a", roughness: 0.6 });
+      const front = new THREE.MeshStandardMaterial({ map: T.label("band", "PAQUITO · 3 UNIDADES"), roughness: 0.6 });
+      const hide = new THREE.MeshBasicMaterial({ visible: false });
+      const box = new THREE.Mesh(new THREE.BoxGeometry(d * 3 + 0.3, 4.6, d + 0.12), [side, side, hide, hide, front, front]);
+      box.position.y = h * 0.42; g.add(box);
+    }
+  }
+  else if (tipo === "novenario") {
+    // paquete de 9 lamparitas, de pie como se exhibe, con la etiqueta al frente
+    const dd = 4.5, hh = 3.2, gap = 0.05;
+    const prof = [[0, 0], [dd / 2 * 0.98, 0], [dd / 2, 0.3], [dd / 2, hh * 0.45]];
+    for (let i = 1; i <= 10; i++) { const a = (i / 10) * Math.PI / 2; prof.push([dd / 2 * Math.cos(a), hh * 0.45 + hh * 0.55 * Math.sin(a)]); }
+    let n = 0;
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+      const wc = mixed ? MIX[n % MIX.length] : color;
+      const v = tagWax(lathe(prof, waxMat(T, wc, 0.05, true), 40), 0.05);
+      v.rotation.x = Math.PI / 2; v.position.set((c - 1) * (dd + gap), dd / 2 + r * (dd + gap), -hh / 2); g.add(v);
+      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.9, 6), new THREE.MeshStandardMaterial({ color: "#f3efe6", roughness: 0.8 }));
+      w.rotation.set(Math.PI / 2, 0, 0.6 + n); w.position.set(v.position.x, v.position.y, hh / 2 + 0.1); w.userData.nofit = true; g.add(w);
+      n++;
+    }
+    const W3 = dd * 3 + gap * 2;
+    const wrap = new THREE.Mesh(new THREE.BoxGeometry(W3 + 0.2, W3 + 0.2, hh + 0.2), new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.05, metalness: 0, transparent: true, opacity: 0.035, depthWrite: false, envMapIntensity: 1.5 }));
+    wrap.position.set(0, W3 / 2, 0); wrap.userData.nofit = true; g.add(wrap);
+    if (m.etiqueta && m.etiqueta.src) g.add(flatLabel(T, m.etiqueta, hh / 2 + 0.25));
+  }
+  else if (tipo === "bandeja") {
+    // semanarios: 8 lamparitas de cúpula en espiral, en la caja de cartón calada y envueltas en plástico
+    const d = 4.4, hh = 4.0, sp = 4.55;
+    const W = sp * 4 + 0.3, Dp = sp * 2 + 0.3, Hp = W / 3.955;
+    const prof = grooveDome(hh, d);
+    let n = 0;
+    for (let z = 0; z < 2; z++) for (let x = 0; x < 4; x++) {
+      const wc = mixed ? MIX[n % MIX.length] : (cname === "Blanco" ? "#f2ead3" : color);
+      const v = tagWax(lathe(prof, waxMat(T, wc, 0.05, true), 72), 0.05); v.position.set((x - 1.5) * sp, 0.15, (z - 0.5) * sp); v.rotation.y = n * 1.7; g.add(v);
+      wick(v, hh - 0.04, 0.55, 0.045, false);
+      n++;
+    }
+    const base = new THREE.Mesh(new THREE.PlaneGeometry(W, Dp), new THREE.MeshStandardMaterial({ color: "#ecebf3", roughness: 0.85 }));
+    base.rotation.x = -Math.PI / 2; base.position.y = 0.02; base.userData.nofit = true; g.add(base);
+    const wall = (src, w, x, z, ry) => {
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, Hp), new THREE.MeshStandardMaterial({ map: T.photoLabel(src), transparent: true, alphaTest: 0.5, roughness: 0.5 }));
+      mesh.position.set(x, Hp / 2, z); mesh.rotation.y = ry; g.add(mesh); return mesh;
+    };
+    if (m.faja) {
+      wall(m.faja, W, 0, Dp / 2 + 0.03, 0); wall(m.faja, W, 0, -Dp / 2 - 0.03, Math.PI);
+      if (m.interior) { wall(m.interior, W, 0, Dp / 2 + 0.01, Math.PI); wall(m.interior, W, 0, -Dp / 2 - 0.01, 0); }
+    }
+    if (m.lado) [-1, 1].forEach(s => { wall(m.lado, Dp, s * (W / 2 + 0.02), 0, s * Math.PI / 2); wall(m.lado, Dp, s * (W / 2 - 0.01), 0, -s * Math.PI / 2); });
+    // envoltura de plástico transparente
+    const clear = new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: 0.08, transmission: 0.95, thickness: 0.1, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false });
+    const wrap = new THREE.Mesh(new THREE.BoxGeometry(W + 0.12, hh + 0.35, Dp + 0.12), [clear, clear, clear, new THREE.MeshBasicMaterial({ visible: false }), clear, clear]); wrap.position.y = (hh + 0.35) / 2; wrap.userData.nofit = true; g.add(wrap);
+  }
+  else if (tipo === "liturgica") {
+    // par de velas litúrgicas unidas con la etiqueta dorada
+    const h = m.alto || 35, d = m.diametro || 2.9;
+    [-1, 1].forEach(s => {
+      const c = tagWax(lathe(taperProfile(h, d), waxMat(T, color, 0.4), 72), 0.4); c.position.x = s * d * 0.5; g.add(c);
+      const top = wick(c, h - 0.12, 0.75); const f = makeFlame(T, 1.0); f.position.y = top - 0.05; c.add(f);
+    });
+    const e = m.etiqueta;
+    if (e && e.src) {
+      g.add(flatLabel(T, e, d / 2 + 0.05));
+      const back = new THREE.Mesh(new THREE.PlaneGeometry(e.ancho, e.alto), new THREE.MeshStandardMaterial({ color: "#c9a24e", metalness: 0.6, roughness: 0.35 }));
+      back.position.set(0, e.centro, -d / 2 - 0.05); back.rotation.y = Math.PI; back.userData.nofit = true; g.add(back);
+    }
+  }
+  else if (tipo === "cumple") {
+    // paquete real (foto del empaque) con las velas de verdad vistas por la ventana
+    const tall = (m.alto || 12) >= 10, len = m.alto || 12;
+    const L = tall ? { W: 7.5, H: 26.25, top: 0.187, head: 0.21, foot: 0.74, rows: 2, per: 6, d: 1.0, pal: ["#7a2e4f", "#e9cf3a", "#45b6d8", "#f06aa8", "#c1173f", "#2e7a3a"] }
+                   : { W: 13, H: 15.05, top: 0.531, head: 0.33, foot: 0.83, rows: 1, per: 12, d: 1.05, pal: ["#c0163e", "#e35a86", "#e8d53a", "#8cc63f", "#e8d53a", "#3fa8bb", "#b8204a", "#e35a86", "#7d2d4a", "#3aa3c0", "#c0163e", "#8cc63f"] };
+    const r = L.d / 2, D = L.rows === 2 ? 4 * r + 0.5 : 2 * r + 0.6;
+    const sideMat = new THREE.MeshStandardMaterial({ map: T.cardSide(L.head, L.foot), roughness: 0.55 });
+    const topMat = new THREE.MeshStandardMaterial({ color: "#d60f50", roughness: 0.55 });
+    const botMat = new THREE.MeshStandardMaterial({ color: "#19bfae", roughness: 0.55 });
+    const face = new THREE.MeshStandardMaterial({ map: T.photoLabel(m.tarjeta), roughness: 0.48, alphaTest: 0.5 });
+    const card = new THREE.Mesh(new THREE.BoxGeometry(L.W, L.H, D), [sideMat, sideMat, topMat, botMat, face, face]);
+    card.position.y = L.H / 2; g.add(card);
+    const yt = L.H * (1 - L.top), single = new THREE.Color(cname === "Blanco" ? "#efe9dc" : color);
+    const geo = new THREE.CylinderGeometry(r, r, len, 28); geo.translate(0, -len / 2, 0);
+    const zf = D / 2 - r - 0.12;
+    for (let row = 0; row < L.rows; row++) for (let i = 0; i < L.per; i++) {
+      const c = !cname || mixed ? L.pal[(row ? L.per - 1 - i : i) % L.pal.length] : single;
+      const v = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: c, roughness: 0.38, envMapIntensity: 0.9 }));
+      v.position.set((i - (L.per - 1) / 2) * L.d, yt, row ? -zf : zf); v.userData.nofit = true; g.add(v);
+    }
+    const div = new THREE.Mesh(new THREE.PlaneGeometry(L.W - 0.1, L.H - 0.1), new THREE.MeshStandardMaterial({ color: "#efeaf6", roughness: 0.9, side: THREE.DoubleSide }));
+    div.position.set(0, L.H / 2, L.rows === 2 ? 0 : zf - r - 0.08); div.userData.nofit = true; g.add(div);
+  }
+  else if (tipo === "incienso" || tipo === "varillas") {
+    // las cajas reales del PDF en exhibidor; la del aroma elegido pasa al frente
+    const inc = tipo === "incienso", cajas = m.cajas || {}, names = Object.keys(cajas);
+    const W = inc ? 6 : 5.4, H = inc ? 22.6 : 22.7, D = inc ? 1.6 : 1.8;
+    names.forEach((name, i) => {
+      const k = i - (names.length - 1) / 2, front = name === aroma;
+      const b = printedBox(T, cajas[name], W, H, D);
+      b.position.set(k * (W + 0.8), H / 2, front ? 1.6 : 0);
+      g.add(b);
+    });
+    const sx = (names.length / 2) * (W + 0.8) + 2.6, st = stone(inc ? 1.7 : 1.9); st.position.x = sx; st.position.z = 6; g.add(st);
+    const coat = inc ? new THREE.Color(aromaColor).lerp(new THREE.Color("#3a281b"), 0.5) : new THREE.Color("#7b4524");
+    const stick = burningStick(coat, inc ? 20.5 : 19.5, inc ? 0.15 : 0.23, inc ? 0.28 : 0.3);
+    stick.position.set(sx, st.position.y + 0.4, 6); g.add(stick);
+    g.updateMatrixWorld(true);
+    addSmoke(g, T, stick.userData.tip.getWorldPosition(new THREE.Vector3()));
+  }
+  else if (tipo === "aromatica") {
+    // vaso de vidrio con la etiqueta real del aroma (desenrollada de la foto) y la cera de su color
+    const tall = (m.altos || []).indexOf(aroma) >= 0;
+    const R = 3.75, Rb = tall ? 3.5 : 3.35, H = tall ? 10.2 : 8.6, rAt = y => Rb + (R - Rb) * y / H;
+    const src = (m.etiquetas || {})[aroma];
+    const glass = new THREE.Mesh(new THREE.CylinderGeometry(R, Rb, H, 96, 1, true), new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: 0.04, transmission: 1, thickness: 0.35, ior: 1.5, transparent: true, opacity: 0.3, side: THREE.DoubleSide, envMapIntensity: 1.4 }));
+    glass.position.y = H / 2; g.add(glass);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(R - 0.04, 0.08, 10, 96), new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: 0.05, transmission: 1, thickness: 0.2, transparent: true, opacity: 0.5 }));
+    rim.rotation.x = Math.PI / 2; rim.position.y = H; g.add(rim);
+    const foot = new THREE.Mesh(new THREE.CylinderGeometry(Rb * 0.99, Rb, 0.9, 72), new THREE.MeshPhysicalMaterial({ color: "#f3f5ef", roughness: 0.08, transmission: 0.9, thickness: 0.8, transparent: true, opacity: 0.6 }));
+    foot.position.y = 0.45; g.add(foot);
+    const y0 = tall ? 1.4 : 1.1, lh = 2 * Math.PI * rAt(y0 + 3) * (tall ? 0.29 : 0.26), y1 = y0 + lh;
+    const fill = Math.min(H - 0.8, y1 + (tall ? 0.3 : 0.15));
+    const waxC = (m.ceras || {})[aroma] ? new THREE.Color((m.ceras || {})[aroma]) : new THREE.Color("#f3ecdf").lerp(new THREE.Color(aromaColor), 0.22);
+    const wx = tagWax(new THREE.Mesh(new THREE.CylinderGeometry(rAt(fill) * 0.955, Rb * 0.955, fill - 0.9, 96), waxMat(T, waxC, 0.32, true)), 0.32);
+    wx.position.y = 0.9 + (fill - 0.9) / 2; g.add(wx);
+    const lbl = new THREE.Mesh(new THREE.CylinderGeometry(rAt(y1) * 1.008, rAt(y0) * 1.008, y1 - y0, 128, 1, true),
+      new THREE.MeshStandardMaterial({ map: src ? T.photoLabel(src) : T.jarLabel(aroma), transparent: !src, alphaTest: src ? 0 : 0.4, roughness: 0.55 }));
+    lbl.position.y = (y0 + y1) / 2; lbl.rotation.y = Math.PI; g.add(lbl);
+    const top = wick(g, fill, 0.6); const f = makeFlame(T, 0.95); f.position.y = top - 0.05; g.add(f);
+    const lid = new THREE.Mesh(new THREE.CylinderGeometry(R * 1.04, R * 1.04, 1.2, 72), new THREE.MeshStandardMaterial({ color: "#c9a25a", metalness: 1, roughness: 0.22 }));
+    lid.position.set(R * 2.15, 0.6, R * 0.55); g.add(lid);
+  }
+  else if (tipo === "gel") {
+    // pote real: costado y tapa tomados de la foto del catálogo
+    const Rt = 3.3, Rb = 2.85, H = 5.2;
+    const cost = (m.costados || {})[aroma] || m.costado, tapa = (m.tapas || {})[aroma] || m.tapa;
+    const side = new THREE.Mesh(new THREE.CylinderGeometry(Rt, Rb, H, 128, 1, true), new THREE.MeshStandardMaterial({ map: cost ? T.photoLabel(cost) : null, color: cost ? "#ffffff" : "#efeae0", roughness: 0.34 }));
+    side.position.y = H / 2; side.rotation.y = Math.PI; g.add(side);
+    const top = new THREE.Mesh(new THREE.CircleGeometry(Rt, 128), new THREE.MeshStandardMaterial({ map: tapa ? T.photoLabel(tapa) : null, color: tapa ? "#ffffff" : "#efeae0", roughness: 0.3 }));
+    top.rotation.x = -Math.PI / 2; top.position.y = H + 0.002; g.add(top);
+    const lip = new THREE.Mesh(new THREE.TorusGeometry(Rt - 0.03, 0.07, 10, 128), new THREE.MeshStandardMaterial({ color: "#f2f2ee", roughness: 0.32 }));
+    lip.rotation.x = Math.PI / 2; lip.position.y = H - 0.03; g.add(lip);
+    const bottom = new THREE.Mesh(new THREE.CircleGeometry(Rb, 64), new THREE.MeshStandardMaterial({ color: "#ecebe6", roughness: 0.5 }));
+    bottom.rotation.x = Math.PI / 2; bottom.position.y = 0.002; g.add(bottom);
+  }
+  else {
+    const h = m.alto || 10, d = m.diametro || 5;
+    g.add(tagWax(lathe(pillarProfile(h, d), waxMat(T, color, 0.5, true)), 0.5));
+    const top = wick(g, h - 0.35, 0.7); const f = makeFlame(T, 1); f.position.y = top - 0.05; g.add(f);
+  }
+  return g;
+}
+</script>
+</body>
+</html>
