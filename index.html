@@ -264,6 +264,11 @@ img { max-width: 100%; display: block; }
   background: var(--green); color: #fff; font-weight: 600; font-size: 13.5px; padding: 10px 16px; border-radius: 999px; pointer-events: none; box-shadow: var(--shadow-lg);
   transition: opacity .25s, transform .35s var(--ease); max-width: calc(100% - 32px); text-align: center; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+/* Realidad aumentada (2026-10-06): capa sobre la cámara en Android */
+.ar-capa { position: fixed; inset: 0; z-index: 9999; pointer-events: none; font-family: Figtree, system-ui, sans-serif; }
+.ar-capa .ar-hint { position: absolute; left: 16px; right: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 28px); margin: 0; padding: 14px 16px; border-radius: 16px; background: rgba(20, 40, 28, .78); color: #fff; font-size: 15px; line-height: 1.4; text-align: center; }
+.ar-capa .ar-cerrar { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 16px); right: 16px; pointer-events: auto; border: 0; border-radius: 999px; padding: 12px 18px; background: #fff; color: #1f5b3f; font: 600 15px Figtree, system-ui, sans-serif; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+#tAR[aria-busy="true"] { opacity: .6; pointer-events: none; }
 
 /* ---------- Escritorio ---------- */
 @media (min-width: 980px) {
@@ -349,6 +354,9 @@ img { max-width: 100%; display: block; }
       </button>
       <button class="tool" id="tSpin" aria-pressed="true" title="Giro automático">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v4h-4"/></svg><span class="t">Girar</span>
+      </button>
+      <button class="tool" id="tAR" title="Ver el producto en tu espacio con la cámara del teléfono (realidad aumentada)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg><span class="t">En tu espacio</span>
       </button>
       <button class="tool" id="tPresent" aria-pressed="false" title="Presentar a un cliente: pantalla completa y avance automático">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8 20h8"/><path d="m10 8 4 2-4 2z" fill="currentColor"/></svg><span class="t">Presentar</span>
@@ -621,6 +629,15 @@ img { max-width: 100%; display: block; }
   $("#tFlame").addEventListener("click", function () { S.flame = !S.flame; this.setAttribute("aria-pressed", String(S.flame)); if (visor) visor.setFlame(S.flame); });
   $("#tSpin").addEventListener("click", function () { S.spin = !S.spin; this.setAttribute("aria-pressed", String(S.spin)); if (visor) visor.setSpin(S.spin); });
   $("#tSpin").setAttribute("aria-pressed", String(S.spin));
+  // Realidad aumentada: el producto, del color y aroma elegidos, a tamaño real en tu espacio.
+  $("#tAR").addEventListener("click", function () {
+    var btn = this; if (!visor || !visor.ar) return;
+    btn.setAttribute("aria-busy", "true"); toast("Preparando el producto…");
+    visor.ar(current(), { color: S.color, aroma: S.aroma }).then(function (r) {
+      if (r === "no") toast("Ábrelo en un teléfono: Android con Chrome o iPhone con Safari.");
+    }).catch(function (e) { console.error(e); toast("Este teléfono no pudo abrir la realidad aumentada."); })
+      .then(function () { btn.removeAttribute("aria-busy"); });
+  });
   $("#brandLink").addEventListener("click", function (e) { e.preventDefault(); select(0, { scrollTop: true }); });
   $("#searchJump").addEventListener("click", function () { $("#catalogo").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" }); setTimeout(function () { $("#q").focus({ preventScroll: true }); }, reduce ? 0 : 450); });
   document.addEventListener("keydown", function (e) {
@@ -1407,9 +1424,81 @@ function boot() {
     return Promise.all(T.pending).then(() => renderShot(p, o, size, 1.12));
   }
 
+  // ---------- Realidad aumentada (2026-10-06) ----------
+  // El mismo modelo del visor, a tamaño real (el catálogo mide en cm; la realidad aumentada, en metros).
+  async function modeloAR(p, o) {
+    const m = buildFor(p, o || {});
+    texSources(p).forEach(src => T.photoLabel(src));
+    await Promise.all(T.pending);
+    await new Promise(r => setTimeout(r, p.glb ? 1500 : 0));
+    applyFlame(m);
+    m.scale.setScalar(0.01);
+    return m;
+  }
+  const esIPhone = () => { const a = document.createElement("a"); return !!(a.relList && a.relList.supports && a.relList.supports("ar")); };
+  // iPhone y iPad: se arma un archivo USDZ en el momento y se abre en el visor de Apple.
+  async function arApple(p, o) {
+    const m = await modeloAR(p, o);
+    const g = new THREE.Group(); g.add(m); g.updateMatrixWorld(true);
+    const { USDZExporter } = await import("three/addons/exporters/USDZExporter.js");
+    const ex = new USDZExporter();
+    const data = ex.parseAsync ? await ex.parseAsync(g) : await new Promise((ok, mal) => { const r = ex.parse(g, ok, mal); if (r && r.then) r.then(ok, mal); });
+    const url = URL.createObjectURL(new Blob([data], { type: "model/vnd.usdz+zip" }));
+    const a = document.createElement("a"); a.rel = "ar"; a.href = url + "#allowsContentScaling=0"; a.appendChild(document.createElement("img"));
+    document.body.appendChild(a); a.click(); setTimeout(() => a.remove(), 1000);
+  }
+  // Android: la cámara del navegador; se busca el piso o la mesa y se toca para poner el producto.
+  async function arAndroid(p, o) {
+    const m = await modeloAR(p, o); m.visible = false;
+    const capa = document.createElement("div"); capa.className = "ar-capa";
+    capa.innerHTML = '<button class="ar-cerrar" type="button">Cerrar</button><p class="ar-hint">Mueve el teléfono despacio sobre el piso o una mesa y toca la pantalla para poner el producto.</p>';
+    document.body.appendChild(capa);
+    const r = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    r.setPixelRatio(window.devicePixelRatio || 1); r.setSize(window.innerWidth, window.innerHeight);
+    r.xr.enabled = true; r.toneMapping = THREE.NeutralToneMapping; r.outputColorSpace = THREE.SRGBColorSpace;
+    const sc = new THREE.Scene();
+    sc.add(new THREE.HemisphereLight("#ffffff", "#c9c4b8", 1.5));
+    const sol = new THREE.DirectionalLight("#fff6ea", 1.6); sol.position.set(0.4, 1, 0.6); sc.add(sol);
+    const cam = new THREE.PerspectiveCamera();
+    const mira = new THREE.Mesh(new THREE.RingGeometry(0.05, 0.065, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: "#95cf5f" }));
+    mira.matrixAutoUpdate = false; mira.visible = false; sc.add(mira, m);
+    let session;
+    try {
+      session = await navigator.xr.requestSession("immersive-ar", { requiredFeatures: ["hit-test"], optionalFeatures: ["dom-overlay"], domOverlay: { root: capa } });
+    } catch (e) { capa.remove(); r.dispose(); throw e; }
+    r.xr.setReferenceSpaceType("local");
+    await r.xr.setSession(session);
+    const vista = await session.requestReferenceSpace("viewer");
+    const fuente = await session.requestHitTestSource({ space: vista });
+    const hint = capa.querySelector(".ar-hint");
+    session.addEventListener("select", () => {
+      if (!mira.visible) return;
+      m.position.setFromMatrixPosition(mira.matrix);
+      const c = new THREE.Vector3().setFromMatrixPosition(r.xr.getCamera().matrixWorld);
+      m.rotation.y = Math.atan2(c.x - m.position.x, c.z - m.position.z);
+      m.visible = true;
+      hint.textContent = "Así se ve a tamaño real. Toca otra vez para moverlo.";
+    });
+    capa.querySelector(".ar-cerrar").addEventListener("click", () => session.end());
+    session.addEventListener("end", () => { r.setAnimationLoop(null); fuente.cancel && fuente.cancel(); disposeTree(m); r.dispose(); capa.remove(); });
+    r.setAnimationLoop((t, frame) => {
+      if (frame) {
+        const hits = frame.getHitTestResults(fuente);
+        if (hits.length) { mira.visible = true; mira.matrix.fromArray(hits[0].getPose(r.xr.getReferenceSpace()).transform.matrix); }
+        else mira.visible = false;
+      }
+      r.render(sc, cam);
+    });
+  }
+  async function ar(p, o) {
+    if (esIPhone()) return arApple(p, o);
+    if (navigator.xr && await navigator.xr.isSessionSupported("immersive-ar").catch(() => false)) return arAndroid(p, o);
+    return "no";
+  }
+
   // ---------- API ----------
   const V = {
-    show, restyle,
+    show, restyle, ar, modeloAR,
     setFlame(on) { flameOn = on; if (model) applyFlame(model); if (lineup) applyFlame(lineup); },
     setSpin(on) { spin = on; if (!lineup) controls.autoRotate = on; },
     setScale(on, list) { if (on) enterLineup(list); else { exitLineup(); if (model) refit(true); } },
