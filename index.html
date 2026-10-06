@@ -1436,6 +1436,39 @@ function boot() {
     m.scale.setScalar(0.01);
     return m;
   }
+  // El archivo del iPhone (USDZ) no acepta piezas con varios materiales (cajas de incienso, repelentes,
+  // velas de cumpleaños, gel, paquetes) ni la luz propia de las etiquetas: se separa cada cara en su propia
+  // pieza y cada etiqueta queda con su foto tal cual (2026-10-06).
+  function prepararUSDZ(root) {
+    const cambios = [];
+    root.traverse(o => { if (o.isMesh) cambios.push(o); });
+    for (const o of cambios) {
+      if (Array.isArray(o.material)) {
+        const geo = o.geometry, grupos = geo.groups.length ? geo.groups : [{ start: 0, count: (geo.index || geo.attributes.position).count, materialIndex: 0 }];
+        const plano = geo.index ? geo.toNonIndexed() : geo;
+        for (const gr of grupos) {
+          const mat = o.material[gr.materialIndex];
+          if (!mat || mat.visible === false) continue;
+          const parte = new THREE.BufferGeometry();
+          for (const [k, at] of Object.entries(plano.attributes)) {
+            const n = at.itemSize, arr = at.array.slice(gr.start * n, (gr.start + gr.count) * n);
+            parte.setAttribute(k, new THREE.BufferAttribute(arr, n, at.normalized));
+          }
+          const pieza = new THREE.Mesh(parte, mat);
+          pieza.position.copy(o.position); pieza.quaternion.copy(o.quaternion); pieza.scale.copy(o.scale);
+          o.parent.add(pieza);
+        }
+        o.parent.remove(o);
+      }
+    }
+    root.traverse(o => {
+      if (!o.isMesh || !o.material || Array.isArray(o.material)) return;
+      if (o.material.emissiveMap) { o.material = o.material.clone(); o.material.emissiveMap = null; o.material.emissive = new THREE.Color(0, 0, 0); o.material.emissiveIntensity = 0; }
+      if (o.material.isMeshBasicMaterial && o.material.visible !== false) {
+        const b = o.material; o.material = new THREE.MeshStandardMaterial({ color: b.color, map: b.map, transparent: b.transparent, opacity: b.opacity, emissive: b.color, emissiveIntensity: 1, roughness: 1 });
+      }
+    });
+  }
   // La llama del visor es de imágenes planas que el iPhone no muestra: se agrega una llama sólida que brilla.
   function llamaSolida(m) {
     const gota = (r, h) => new THREE.LatheGeometry([0, .35, .6, .75, .8, .72, .52, .25, 0].map((k, i, a) => new THREE.Vector2(r * k, h * i / (a.length - 1))), 24);
@@ -1452,7 +1485,7 @@ function boot() {
   // iPhone y iPad: se arma un archivo USDZ en el momento y se abre en el visor de Apple.
   async function arApple(p, o) {
     const m = await modeloAR(p, o);
-    llamaSolida(m);
+    llamaSolida(m); prepararUSDZ(m);
     const g = new THREE.Group(); g.add(m); g.updateMatrixWorld(true);
     const { USDZExporter } = await import("three/addons/exporters/USDZExporter.js");
     const ex = new USDZExporter();
@@ -1531,7 +1564,7 @@ function boot() {
 
   // ---------- API ----------
   const V = {
-    show, restyle, ar, modeloAR, llamaSolida,
+    show, restyle, ar, modeloAR, llamaSolida, prepararUSDZ,
     setFlame(on) { flameOn = on; if (model) applyFlame(model); if (lineup) applyFlame(lineup); },
     setSpin(on) { spin = on; if (!lineup) controls.autoRotate = on; },
     setScale(on, list) { if (on) enterLineup(list); else { exitLineup(); if (model) refit(true); } },
