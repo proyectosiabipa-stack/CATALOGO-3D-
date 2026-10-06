@@ -1770,15 +1770,22 @@ function wick(group, y, len = 0.7, r = 0.055, lit = true) {
   tipEmber.position.set(Math.sin(0.08) * -len, y + len, 0); tipEmber.userData.isEmber = true; tipEmber.userData.nofit = true; group.add(tipEmber);
   return y + len;
 }
+// Etiquetas y empaques reales con buena luz (2026-10-06): se iluminan un poco solas para que todas se vean
+// claras como la del Velón #5, sin importar de qué lado les llegue la luz de la escena.
+const LABEL_GLOW = 0.9;
+function labelMat(T, src, extra = {}) {
+  const map = T.photoLabel(src);
+  return new THREE.MeshStandardMaterial({ map, emissive: "#ffffff", emissiveMap: map, emissiveIntensity: LABEL_GLOW, roughness: 0.6, metalness: 0, envMapIntensity: 0.4, ...extra });
+}
 function flatLabel(T, e, z) {
   const geo = new THREE.PlaneGeometry(e.ancho, e.alto);
-  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: T.photoLabel(e.src), transparent: true, alphaTest: 0.5, roughness: 0.5, side: THREE.DoubleSide }));
+  const mesh = new THREE.Mesh(geo, labelMat(T, e.src, { transparent: true, alphaTest: 0.5, side: THREE.DoubleSide }));
   mesh.position.set(0, e.centro, z); mesh.userData.nofit = true;
   return mesh;
 }
 // caja impresa: la foto del empaque al frente y atrás, los costados del color del empaque
 function printedBox(T, src, w, h, d) {
-  const face = new THREE.MeshStandardMaterial({ map: T.photoLabel(src), roughness: 0.5, alphaTest: 0.5 });
+  const face = labelMat(T, src, { alphaTest: 0.5 });
   const side = new THREE.MeshStandardMaterial({ color: "#eeeeee", roughness: 0.6 });
   T.sideColor(src, side);
   return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), [side, side, side, side, face, face]);
@@ -1866,7 +1873,7 @@ function makeModel(p, o, T) {
     if (e.src) {
       // etiqueta real (foto desenrollada), centrada al frente
       const lg = new THREE.CylinderGeometry(d / 2 * 1.006, d / 2 * 1.006, e.alto, 128, 1, true);
-      const lbl = new THREE.Mesh(lg, new THREE.MeshStandardMaterial({ map: T.photoLabel(e.src), transparent: true, alphaTest: 0.5, roughness: 0.55 }));
+      const lbl = new THREE.Mesh(lg, labelMat(T, e.src, { transparent: true, alphaTest: 0.5 }));
       lbl.position.y = e.centro; lbl.rotation.y = Math.PI; g.add(lbl);
     } else if (m.etiqueta !== false) {
       // etiqueta con el diseño de la línea de velones (misma plantilla que Nro. 1 y Nro. 4)
@@ -1884,7 +1891,7 @@ function makeModel(p, o, T) {
     const e = m.etiqueta || {};
     const bw = sp * 5 + 0.1, bh = e.alto || 4.1, bd = d + 0.1;
     const plain = new THREE.MeshStandardMaterial({ color: "#f3eee7", roughness: 0.7 });
-    const front = e.src ? new THREE.MeshStandardMaterial({ map: T.photoLabel(e.src), roughness: 0.6 }) : plain;
+    const front = e.src ? labelMat(T, e.src) : plain;
     const hide = new THREE.MeshBasicMaterial({ visible: false });
     const band = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), [plain, plain, hide, hide, front, plain]);
     band.position.y = e.centro || h * 0.36; g.add(band);
@@ -1901,7 +1908,7 @@ function makeModel(p, o, T) {
       pos.setZ(i, Math.sign(z) * (0.03 + (TH / 2 - 0.03) * Math.sqrt(Math.max(0, fx * fy))));
     }
     geo.computeVertexNormals(); geo.translate(0, H / 2, 0);
-    const face = new THREE.MeshPhysicalMaterial({ map: b.src ? T.photoLabel(b.src) : null, color: b.src ? "#ffffff" : "#2f6f9a", transparent: true, roughness: 0.32, clearcoat: 0.6, clearcoatRoughness: 0.25 });
+    const face = new THREE.MeshPhysicalMaterial({ map: b.src ? T.photoLabel(b.src) : null, color: b.src ? "#ffffff" : "#2f6f9a", transparent: true, roughness: 0.32, clearcoat: 0.6, clearcoatRoughness: 0.25, ...(b.src ? { emissive: "#ffffff", emissiveMap: T.photoLabel(b.src), emissiveIntensity: LABEL_GLOW } : {}) });
     const rim = new THREE.MeshStandardMaterial({ color: "#e9e6dc", roughness: 0.4, transparent: true, opacity: 0.6 });
     g.add(new THREE.Mesh(geo, [rim, rim, rim, rim, face, face]));
   }
